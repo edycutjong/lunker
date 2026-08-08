@@ -1,0 +1,237 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320" role="img" aria-label="Lunker — a cozy fishing game where fish bite while the app is closed. Animated banner: a bite push arrives, the 60-second reel window counts down, the needle holds the green zone, a rare Moonlight Koi is landed, and COIN settles server-side via RevenueCat Virtual Currency.">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0A2A34"/>
+      <stop offset="100%" stop-color="#03141B"/>
+    </linearGradient>
+    <linearGradient id="heroGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#3FDBB6"/>
+      <stop offset="100%" stop-color="#FFA05A"/>
+    </linearGradient>
+    <linearGradient id="beamGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.055"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="tealAura">
+      <stop offset="0%" stop-color="#3FDBB6" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#3FDBB6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="amberAura">
+      <stop offset="0%" stop-color="#FFA05A" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#FFA05A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="reelGlow">
+      <stop offset="0%" stop-color="#3FDBB6" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#3FDBB6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="hookGradH" gradientUnits="userSpaceOnUse" x1="320" y1="140" x2="196" y2="330">
+      <stop offset="0%" stop-color="#3FDBB6"/>
+      <stop offset="58%" stop-color="#3FDBB6"/>
+      <stop offset="100%" stop-color="#FFA05A"/>
+    </linearGradient>
+    <pattern id="gridP" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M64 0H0V64" fill="none" stroke="rgba(148,210,195,0.05)" stroke-width="1"/>
+    </pattern>
+    <clipPath id="plateClip">
+      <rect x="0" y="0" width="1280" height="320" rx="24"/>
+    </clipPath>
+    <clipPath id="kerClip">
+      <path transform="translate(113.5,0)" d="M12.5 0L4.5 0L4.5-44.8L12.5-44.8L12.5-20L13.7-20L24.2-31.7L34.7-31.7L20-16.4L35.2 0L24.8 0L13.7-12.6L12.5-12.6L12.5 0M53.1 0.9Q48.4 0.9 44.8-1.1Q41.2-3.1 39.1-6.8Q37.1-10.5 37.1-15.5L37.1-16.3Q37.1-21.2 39.1-24.9Q41.1-28.6 44.7-30.6Q48.3-32.6 53-32.6Q57.7-32.6 61.1-30.6Q64.6-28.5 66.5-24.8Q68.4-21.1 68.4-16.3L68.4-13.5L45.3-13.5Q45.4-10.2 47.7-8.2Q50-6.1 53.4-6.1Q56.8-6.1 58.4-7.6Q60-9.1 60.8-10.9L67.4-7.4Q66.5-5.8 64.8-3.8Q63.1-1.9 60.3-0.5Q57.5 0.9 53.1 0.9M45.4-19.5L60.2-19.5Q60-22.3 58-23.9Q56.1-25.6 52.9-25.6Q49.7-25.6 47.7-23.9Q45.8-22.3 45.4-19.5M83.6 0L75.6 0L75.6-31.7L83.5-31.7L83.5-28.2L84.7-28.2Q85.4-30.1 87-31Q88.6-31.9 90.8-31.9L94.7-31.9L94.7-24.7L90.7-24.7Q87.6-24.7 85.6-23.1Q83.6-21.4 83.6-18"/>
+    </clipPath>
+    <filter id="auroraBlur" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="34"/>
+    </filter>
+    <filter id="cometBlur" x="-120%" y="-120%" width="340%" height="340%">
+      <feGaussianBlur stdDeviation="2.4"/>
+    </filter>
+  </defs>
+
+  <style>
+    .f-sans { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    .f-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .aura-a { animation: driftA 16s ease-in-out infinite alternate; }
+    .aura-b { animation: driftB 19s ease-in-out infinite alternate; }
+    @keyframes driftA { from { transform: translate(0,0); } to { transform: translate(70px,-24px); } }
+    @keyframes driftB { from { transform: translate(0,0); } to { transform: translate(-60px,20px); } }
+    .beam { animation: beamSweep 8s linear infinite; }
+    @keyframes beamSweep { 0% { transform: translateX(-260px); } 46% { transform: translateX(1500px); } 100% { transform: translateX(1500px); } }
+    .metric-pulse { animation: metricPulse 8s ease-in-out infinite; }
+    @keyframes metricPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+    .pop { transform-box: fill-box; transform-origin: center; }
+    .pop-push { animation: popPush 8s cubic-bezier(0.2, 1.4, 0.4, 1) infinite; }
+    @keyframes popPush { 0%, 6% { transform: scale(0.6); } 9% { transform: scale(1.14); } 12% { transform: scale(0.97); } 15%, 100% { transform: scale(1); } }
+    .pop-catch { animation: popCatch 8s cubic-bezier(0.2, 1.4, 0.4, 1) infinite; }
+    @keyframes popCatch { 0%, 62% { transform: scale(0.6); } 65% { transform: scale(1.12); } 68% { transform: scale(0.97); } 71%, 100% { transform: scale(1); } }
+    .pop-coin { animation: popCoin 8s cubic-bezier(0.2, 1.4, 0.4, 1) infinite; }
+    @keyframes popCoin { 0%, 70% { transform: scale(0.6); } 73% { transform: scale(1.12); } 76% { transform: scale(0.97); } 79%, 100% { transform: scale(1); } }
+    .pop-seal { animation: popSeal 8s cubic-bezier(0.2, 1.4, 0.4, 1) infinite; }
+    @keyframes popSeal { 0%, 56% { transform: scale(0.2) rotate(18deg); } 59% { transform: scale(1.2) rotate(-9deg); } 61.5% { transform: scale(0.95) rotate(-4deg); } 64%, 100% { transform: scale(1) rotate(-6deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; }
+    }
+  </style>
+
+  <!-- ================= backdrop ================= -->
+  <rect x="0" y="0" width="1280" height="320" rx="24" fill="url(#bgGrad)"/>
+  <g clip-path="url(#plateClip)">
+    <rect x="0" y="0" width="1280" height="320" fill="url(#gridP)"/>
+    <g class="aura-a"><circle cx="270" cy="330" r="170" fill="url(#tealAura)" filter="url(#auroraBlur)"/></g>
+    <g class="aura-b"><circle cx="1130" cy="-14" r="150" fill="url(#amberAura)" filter="url(#auroraBlur)"/></g>
+    <g class="beam"><rect x="0" y="-20" width="130" height="360" fill="url(#beamGrad)" transform="skewX(-16)"/></g>
+  </g>
+  <rect x="0.5" y="0.5" width="1279" height="319" rx="23.5" fill="none" stroke="rgba(255,255,255,0.09)"/>
+
+  <!-- ================= left: brand block (x 44..530) ================= -->
+  <!-- mini animated mark -->
+  <g transform="translate(44,78) scale(0.125)">
+    <g fill="none" stroke="#3FDBB6" opacity="0.75">
+      <ellipse cx="312" cy="196" rx="46" ry="12" stroke-width="10" opacity="0.6"/>
+      <ellipse cx="312" cy="196" rx="84" ry="22" stroke-width="7" opacity="0.28"/>
+    </g>
+    <path d="M312 150 L312 300 A80 80 0 1 1 192 230.7" fill="none" stroke="url(#hookGradH)" stroke-width="34" stroke-linecap="round"/>
+    <path d="M192 230.7 L217 252" fill="none" stroke="#FFA05A" stroke-width="24" stroke-linecap="round"/>
+    <circle cx="312" cy="128" r="16" fill="none" stroke="#3FDBB6" stroke-width="15"/>
+    <path d="M394 110 C 374 136, 338 130, 316 114" fill="none" stroke="#FFA05A" stroke-width="11" stroke-linecap="round" opacity="0.9"/>
+    <g>
+      <animate attributeName="opacity" values="1;0.45;1" keyTimes="0;0.5;1" dur="8s" repeatCount="indefinite"/>
+      <circle cx="398" cy="84" r="30" fill="#FFA05A"/>
+      <circle cx="398" cy="84" r="30" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="4"/>
+    </g>
+  </g>
+
+  <!-- outlined wordmark: "Lun" near-white + "ker" gradient (Space Grotesk 700, outlined paths) -->
+  <g transform="translate(128,130) scale(1.2)">
+    <path fill="#F0FAF6" d="M33.2 0L4.2 0L4.2-44.8L12.7-44.8L12.7-7.7L33.2-7.7L33.2 0M51.3 0.5Q47.6 0.5 44.8-1.2Q42-2.9 40.4-5.9Q38.9-8.9 38.9-12.8L38.9-31.7L47-31.7L47-13.4Q47-9.9 48.7-8.1Q50.5-6.3 53.8-6.3Q57.5-6.3 59.5-8.7Q61.6-11.2 61.6-15.6L61.6-31.7L69.6-31.7L69.6 0L61.7 0L61.7-4.2L60.5-4.2Q59.8-2.6 57.7-1Q55.6 0.5 51.3 0.5M86.7 0L78.6 0L78.6-31.7L86.5-31.7L86.5-27.6L87.7-27.6Q88.4-29.2 90.6-30.8Q92.7-32.3 97-32.3Q100.7-32.3 103.5-30.6Q106.2-28.9 107.8-25.9Q109.3-22.9 109.3-18.9L109.3 0L101.2 0L101.2-18.3Q101.2-21.9 99.5-23.7Q97.7-25.5 94.5-25.5Q90.8-25.5 88.7-23Q86.7-20.5 86.7-16.1L86.7 0"/>
+    <g transform="translate(113.5,0)">
+      <path fill="url(#heroGrad)" d="M12.5 0L4.5 0L4.5-44.8L12.5-44.8L12.5-20L13.7-20L24.2-31.7L34.7-31.7L20-16.4L35.2 0L24.8 0L13.7-12.6L12.5-12.6L12.5 0M53.1 0.9Q48.4 0.9 44.8-1.1Q41.2-3.1 39.1-6.8Q37.1-10.5 37.1-15.5L37.1-16.3Q37.1-21.2 39.1-24.9Q41.1-28.6 44.7-30.6Q48.3-32.6 53-32.6Q57.7-32.6 61.1-30.6Q64.6-28.5 66.5-24.8Q68.4-21.1 68.4-16.3L68.4-13.5L45.3-13.5Q45.4-10.2 47.7-8.2Q50-6.1 53.4-6.1Q56.8-6.1 58.4-7.6Q60-9.1 60.8-10.9L67.4-7.4Q66.5-5.8 64.8-3.8Q63.1-1.9 60.3-0.5Q57.5 0.9 53.1 0.9M45.4-19.5L60.2-19.5Q60-22.3 58-23.9Q56.1-25.6 52.9-25.6Q49.7-25.6 47.7-23.9Q45.8-22.3 45.4-19.5M83.6 0L75.6 0L75.6-31.7L83.5-31.7L83.5-28.2L84.7-28.2Q85.4-30.1 87-31Q88.6-31.9 90.8-31.9L94.7-31.9L94.7-24.7L90.7-24.7Q87.6-24.7 85.6-23.1Q83.6-21.4 83.6-18"/>
+    </g>
+    <!-- shimmer sweep under the gradient word's clip -->
+    <g clip-path="url(#kerClip)">
+      <g>
+        <animateTransform attributeName="transform" type="translate" values="70 0;70 0;250 0;250 0" keyTimes="0;0.3;0.42;1" dur="8s" repeatCount="indefinite"/>
+        <rect x="0" y="-54" width="24" height="64" fill="rgba(255,255,255,0.6)" transform="skewX(-18)"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- tagline (system sans, 2 lines) -->
+  <text class="f-sans" x="48" y="174" font-size="17" fill="#C9DCD6">The fish bite while the app is closed —</text>
+  <text class="f-sans" x="48" y="198" font-size="17" fill="#94B3AC">the push is your rod twitching.</text>
+
+  <!-- pulsing hero-metric line (mono, accent) -->
+  <text class="f-mono metric-pulse" x="48" y="236" font-size="13" fill="#FFA05A">&#9656; 60s bite window &#183; reel-tension &#183; server-settled COIN</text>
+
+  <!-- tech-stack line (mono, faint) -->
+  <text class="f-mono" x="48" y="263" font-size="11.5" fill="#5E7B75">React Native &#183; Expo &#183; RevenueCat VC &#183; OneSignal Journeys</text>
+  <text class="f-mono" x="48" y="289" font-size="10" fill="#537B72">REVENUECAT SHIPATON 2026 &#183; GOOGLE PLAY</text>
+
+  <!-- ================= right: product story (x 560..1240) ================= -->
+  <g>
+    <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.02;0.96;1" dur="8s" repeatCount="indefinite"/>
+
+    <!-- wires (draw in) -->
+    <path d="M750 76 C 795 76, 802 138, 826 157" pathLength="100" style="stroke-dasharray:100" fill="none" stroke="rgba(63,219,182,0.5)" stroke-width="1.6">
+      <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.02;0.08;1" dur="8s" repeatCount="indefinite"/>
+    </path>
+    <path d="M925 140 C 962 118, 988 102, 1022 93" pathLength="100" style="stroke-dasharray:100" fill="none" stroke="rgba(63,219,182,0.5)" stroke-width="1.6">
+      <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.03;0.09;1" dur="8s" repeatCount="indefinite"/>
+    </path>
+    <path d="M925 192 C 962 212, 988 226, 1022 236" pathLength="100" style="stroke-dasharray:100" fill="none" stroke="rgba(255,160,90,0.5)" stroke-width="1.6">
+      <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.04;0.1;1" dur="8s" repeatCount="indefinite"/>
+    </path>
+
+    <!-- BITE PUSH card -->
+    <g class="pop pop-push">
+      <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.06;0.09;1" dur="8s" repeatCount="indefinite"/>
+      <rect x="570" y="44" width="180" height="64" rx="12" fill="rgba(4,23,30,0.78)" stroke="rgba(255,160,90,0.45)"/>
+      <text class="f-mono" x="584" y="62" font-size="9" letter-spacing="1.5" fill="#6E8D86">BITE ALERT &#183; now</text>
+      <text class="f-sans" x="584" y="80" font-size="13" font-weight="600" fill="#F0FAF6">Rod is twitching!</text>
+      <text class="f-mono" x="584" y="97" font-size="10" fill="#FFA05A">Willow Lake &#183; 60s left</text>
+      <circle cx="736" cy="58" r="5" fill="#FFA05A">
+        <animate attributeName="opacity" values="0;0;1;0.25;1;0.25;1;1" keyTimes="0;0.07;0.09;0.11;0.13;0.15;0.17;1" dur="8s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+
+    <!-- REEL gauge -->
+    <g>
+      <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.08;0.13;1" dur="8s" repeatCount="indefinite"/>
+      <circle cx="880" cy="166" r="62" fill="url(#reelGlow)">
+        <animate attributeName="opacity" values="0.5;0.5;0.5;1;0.4;0.9;0.35;0.35" keyTimes="0;0.56;0.83;0.87;0.9;0.93;0.96;1" dur="8s" repeatCount="indefinite"/>
+      </circle>
+      <text class="f-mono" x="880" y="99" font-size="10" letter-spacing="2" fill="#94B3AC" text-anchor="middle">60s WINDOW</text>
+      <!-- countdown ring -->
+      <circle cx="880" cy="166" r="52" pathLength="100" style="stroke-dasharray:100" fill="none" stroke="#FFA05A" stroke-width="3" stroke-linecap="round" transform="rotate(-90 880 166)">
+        <animate attributeName="stroke-dashoffset" values="0;0;100;100" keyTimes="0;0.14;0.58;1" dur="8s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0;0.9;0.9;0;0" keyTimes="0;0.12;0.14;0.56;0.6;1" dur="8s" repeatCount="indefinite"/>
+      </circle>
+      <!-- tension track + green zone -->
+      <circle cx="880" cy="166" r="36" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="9"/>
+      <path d="M909.5 145.3 A36 36 0 0 1 909.5 186.7" fill="none" stroke="#3FDBB6" stroke-width="9" opacity="0.75"/>
+      <!-- needle -->
+      <g>
+        <animateTransform attributeName="transform" type="rotate" values="-55 880 166;-55 880 166;-28 880 166;18 880 166;-24 880 166;30 880 166;-8 880 166;22 880 166;-2 880 166;0 880 166;0 880 166" keyTimes="0;0.24;0.29;0.34;0.39;0.44;0.48;0.52;0.55;0.56;1" dur="8s" repeatCount="indefinite"/>
+        <line x1="880" y1="166" x2="924" y2="166" stroke="#F0FAF6" stroke-width="3.5" stroke-linecap="round"/>
+      </g>
+      <circle cx="880" cy="166" r="4.5" fill="#F0FAF6"/>
+      <!-- ripple burst on landing -->
+      <circle cx="880" cy="166" fill="none" stroke="#3FDBB6" stroke-width="3">
+        <animate attributeName="r" values="52;52;92;92" keyTimes="0;0.56;0.66;1" dur="8s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0;0.8;0;0" keyTimes="0;0.56;0.575;0.66;1" dur="8s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+
+    <!-- LANDED seal -->
+    <g class="pop pop-seal">
+      <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.56;0.585;1" dur="8s" repeatCount="indefinite"/>
+      <rect x="834" y="245" width="92" height="26" rx="7" fill="rgba(63,219,182,0.12)" stroke="#3FDBB6" stroke-width="1.5"/>
+      <text class="f-mono" x="880" y="262" font-size="12" font-weight="600" letter-spacing="2" fill="#3FDBB6" text-anchor="middle">LANDED</text>
+    </g>
+
+    <!-- CATCH card -->
+    <g class="pop pop-catch">
+      <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.62;0.65;1" dur="8s" repeatCount="indefinite"/>
+      <rect x="1030" y="52" width="190" height="78" rx="12" fill="rgba(4,23,30,0.78)" stroke="rgba(255,160,90,0.5)"/>
+      <text class="f-mono" x="1044" y="74" font-size="10" letter-spacing="2" fill="#FFA05A">RARE</text>
+      <text class="f-sans" x="1044" y="94" font-size="14" font-weight="600" fill="#F0FAF6">Moonlight Koi</text>
+      <text class="f-mono" x="1044" y="112" font-size="10" fill="#94B3AC">4.2 kg &#183; minted to album</text>
+      <g fill="#FFA05A" opacity="0.9">
+        <ellipse cx="1180" cy="74" rx="13" ry="7.5"/>
+        <polygon points="1191,74 1202,67 1202,81"/>
+        <circle cx="1173" cy="72" r="1.6" fill="#04171E"/>
+      </g>
+    </g>
+
+    <!-- COIN pill -->
+    <g class="pop pop-coin">
+      <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.7;0.73;1" dur="8s" repeatCount="indefinite"/>
+      <rect x="1030" y="210" width="190" height="58" rx="12" fill="rgba(4,23,30,0.78)" stroke="rgba(63,219,182,0.5)"/>
+      <circle cx="1052" cy="232" r="11" fill="#FFA05A"/>
+      <circle cx="1052" cy="232" r="6.5" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="2"/>
+      <text class="f-mono" x="1070" y="237" font-size="13" font-weight="600" fill="#3FDBB6">+120 COIN</text>
+      <text class="f-mono" x="1044" y="256" font-size="9.5" fill="#5E7B75">
+        <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.78;0.83;1" dur="8s" repeatCount="indefinite"/>
+        server-settled &#183; RC VC
+      </text>
+      <path d="M1178 249 l6 7 l11 -13" pathLength="100" style="stroke-dasharray:100" fill="none" stroke="#3FDBB6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.76;0.82;1" dur="8s" repeatCount="indefinite"/>
+      </path>
+    </g>
+
+    <!-- comets -->
+    <g filter="url(#cometBlur)">
+      <circle r="5" fill="#9FF3DC">
+        <animateMotion path="M750 76 C 795 76, 802 138, 826 157" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.18;0.24;1" dur="8s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.18;0.19;0.23;0.245;1" dur="8s" repeatCount="indefinite"/>
+      </circle>
+      <circle r="5" fill="#FFD9B0">
+        <animateMotion path="M925 140 C 962 118, 988 102, 1022 93" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.58;0.63;1" dur="8s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.58;0.59;0.625;0.64;1" dur="8s" repeatCount="indefinite"/>
+      </circle>
+      <circle r="5" fill="#FFD9B0">
+        <animateMotion path="M925 192 C 962 212, 988 226, 1022 236" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.66;0.71;1" dur="8s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.66;0.67;0.705;0.72;1" dur="8s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+  </g>
+</svg>
