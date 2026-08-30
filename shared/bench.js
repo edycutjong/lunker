@@ -178,14 +178,11 @@ const grp = (n) => n.toLocaleString('en-US');
 export function formatBench(r, meta) {
   const lines = [];
   lines.push(
-    `Source: ${meta.sourceLabel}` +
-      (meta.fixture ? '  (VALIDATION DATA — NOT SUBMITTABLE)' : ''),
+    `Source: ${meta.sourceLabel}` + (meta.fixture ? '  (VALIDATION DATA — NOT SUBMITTABLE)' : ''),
   );
   lines.push(`Rows ingested:              ${r.ingested}`);
   const pct = r.answeredPct == null ? 'n/a' : `${r.answeredPct.toFixed(1)}%`;
-  lines.push(
-    `Answered within window:     ${r.answered} / ${r.denominator}  (${pct})`,
-  );
+  lines.push(`Answered within window:     ${r.answered} / ${r.denominator}  (${pct})`);
   const p = (v) => (v == null ? 'n/a' : grp(v));
   lines.push(
     `Open latency (ms):          p50=${p(r.p50)}  p95=${p(r.p95)}  max=${p(r.max)}   (n=${r.latencyN})`,
@@ -196,9 +193,7 @@ export function formatBench(r, meta) {
   lines.push(
     `Clock-skew rows excluded from latency: ${r.clockSkew}  (flagged, retained in denominator)`,
   );
-  lines.push(
-    `Fabricated ids rejected:    ${r.fabricated}   (not in \`sent\` log)`,
-  );
+  lines.push(`Fabricated ids rejected:    ${r.fabricated}   (not in \`sent\` log)`);
   lines.push(`Never-opened (denominator only): ${r.neverOpened}`);
   return lines.join('\n');
 }

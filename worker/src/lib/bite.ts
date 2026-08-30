@@ -60,7 +60,7 @@ export interface Player {
 
 /** @returns local hour 0-23 for a player's stored UTC offset */
 export function localHourFor(player: Pick<Player, 'tz_offset_min'>, nowMs: number): number {
-  return Math.floor(((nowMs + player.tz_offset_min * 60_000) / 3_600_000) % 24 + 24) % 24;
+  return Math.floor((((nowMs + player.tz_offset_min * 60_000) / 3_600_000) % 24) + 24) % 24;
 }
 
 export function isDue(player: Player, nowMs: number): boolean {
@@ -121,14 +121,16 @@ export async function dispatchBite(
 
   await db.batch([
     db
-      .prepare('INSERT INTO sent (notification_id, app_user_id, lake_id, roll_seed, sent_at) VALUES (?, ?, ?, ?, ?)')
+      .prepare(
+        'INSERT INTO sent (notification_id, app_user_id, lake_id, roll_seed, sent_at) VALUES (?, ?, ?, ?, ?)',
+      )
       .bind(notificationId, appUserId, lakeId, rollSeed, sentAt),
     db
-      .prepare('INSERT INTO bite_telemetry (notification_id, opened_at, latency_ms, clock_skew, resolved) VALUES (?, NULL, NULL, 0, NULL)')
+      .prepare(
+        'INSERT INTO bite_telemetry (notification_id, opened_at, latency_ms, clock_skew, resolved) VALUES (?, NULL, NULL, 0, NULL)',
+      )
       .bind(notificationId),
-    db
-      .prepare('UPDATE players SET last_bite_at = ? WHERE app_user_id = ?')
-      .bind(sentAt, appUserId),
+    db.prepare('UPDATE players SET last_bite_at = ? WHERE app_user_id = ?').bind(sentAt, appUserId),
   ]);
 
   let pushStatus: number | null = null;
@@ -145,5 +147,10 @@ export async function dispatchBite(
     pushStatus = null;
   }
 
-  return { notification_id: notificationId, lake_id: lakeId, sent_at: sentAt, push_status: pushStatus };
+  return {
+    notification_id: notificationId,
+    lake_id: lakeId,
+    sent_at: sentAt,
+    push_status: pushStatus,
+  };
 }

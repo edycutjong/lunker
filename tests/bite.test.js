@@ -10,8 +10,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { FakeD1, makeDeps } from './helpers/d1.js';
 import {
-  dispatchBite, isDue, isWithinCadence, localHourFor, MIN_BITE_GAP_MS,
-  dailyCapFor, bitesSentToday,
+  dispatchBite,
+  isDue,
+  isWithinCadence,
+  localHourFor,
+  MIN_BITE_GAP_MS,
+  dailyCapFor,
+  bitesSentToday,
 } from '../worker/src/lib/bite.js';
 import { runDispatch } from '../worker/src/index.js';
 
@@ -33,12 +38,29 @@ afterEach(() => vi.unstubAllGlobals());
 
 function addPlayer(db, over = {}) {
   const p = {
-    app_user_id: USER, current_lake: 'willow', unlocked_lakes: 'willow,reeds',
-    streak_days: 0, push_enabled: 1, tz_offset_min: 0, last_bite_at: null, ...over,
+    app_user_id: USER,
+    current_lake: 'willow',
+    unlocked_lakes: 'willow,reeds',
+    streak_days: 0,
+    push_enabled: 1,
+    tz_offset_min: 0,
+    last_bite_at: null,
+    ...over,
   };
   db.prepare(
     'INSERT INTO players (app_user_id,current_lake,unlocked_lakes,streak_days,push_enabled,tz_offset_min,last_bite_at,created_at) VALUES (?,?,?,?,?,?,?,?)',
-  ).bind(p.app_user_id, p.current_lake, p.unlocked_lakes, p.streak_days, p.push_enabled, p.tz_offset_min, p.last_bite_at, NOW).run();
+  )
+    .bind(
+      p.app_user_id,
+      p.current_lake,
+      p.unlocked_lakes,
+      p.streak_days,
+      p.push_enabled,
+      p.tz_offset_min,
+      p.last_bite_at,
+      NOW,
+    )
+    .run();
   return p;
 }
 
@@ -84,7 +106,15 @@ describe('localHourFor', () => {
 });
 
 describe('isDue', () => {
-  const base = { app_user_id: USER, current_lake: 'reeds', unlocked_lakes: 'reeds', streak_days: 0, push_enabled: 1, tz_offset_min: 0, last_bite_at: null };
+  const base = {
+    app_user_id: USER,
+    current_lake: 'reeds',
+    unlocked_lakes: 'reeds',
+    streak_days: 0,
+    push_enabled: 1,
+    tz_offset_min: 0,
+    last_bite_at: null,
+  };
   // Pin local time to noon so cadence is satisfied and only the rule under test varies.
   const noon = NOW - new Date(NOW).getUTCHours() * 3_600_000 + 12 * 3_600_000;
 
@@ -168,7 +198,9 @@ describe('dispatchBite', () => {
 
   it('still logs the bite when the push fails to send', async () => {
     // Dropping it would quietly remove the hardest rows from the denominator.
-    vi.stubGlobal('fetch', async () => { throw new Error('network down'); });
+    vi.stubGlobal('fetch', async () => {
+      throw new Error('network down');
+    });
     addPlayer(deps.db);
     const rec = await dispatchBite(deps, USER, 'willow');
     expect(rec.push_status).toBeNull();

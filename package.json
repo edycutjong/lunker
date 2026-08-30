@@ -6,12 +6,33 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "npm run typecheck:worker && npm run typecheck:app",
+    "typecheck:worker": "npm --prefix worker run typecheck",
+    "typecheck:app": "npm --prefix app run typecheck",
     "seed": "node scripts/seed.mjs",
     "seed:anomalies": "node scripts/lunker-verify.mjs seed:anomalies",
     "bench": "node scripts/lunker-verify.mjs bench --source fixture --file seed/telemetry-anomalies.json --window-sec 60",
-    "readiness": "node scripts/check-submission-readiness.mjs"
+    "audit": "npm audit --audit-level=high",
+    "secrets": "gitleaks detect --source . --config .gitleaks.toml --no-banner --redact --verbose",
+    "readiness": "node scripts/check-submission-readiness.mjs",
+    "ci": "npm run format:check && npm run lint && npm run test"
   },
   "devDependencies": {
-    "vitest": "^2.1.8"
+    "@eslint/js": "^9.39.5",
+    "@vitest/coverage-v8": "^3.2.7",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^9.1.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^15.15.0",
+    "prettier": "^3.9.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.68.0",
+    "vitest": "^3.2.7"
   }
 }

@@ -1,0 +1,80 @@
+name: Bug report
+description: Something in the app, the Worker or the tooling does not behave as documented.
+title: '[Bug] '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do **not** use this template for security issues. Use
+        **Security → Report a vulnerability** on this repository, or email
+        edy.cu@live.com. See `.github/SECURITY.md`.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part?
+      options:
+        - Android app (Expo / React Native)
+        - Worker (routes, cron dispatcher, D1)
+        - Push delivery / deep link into the minigame
+        - Economy (COIN grant, spend, RevenueCat)
+        - CLI / bench / seed
+        - CI, lint or tooling
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you observed, and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. …
+        2. …
+        3. …
+    validations:
+      required: true
+
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: |
+        Whichever apply. `node --version` matters for anything test-related —
+        the suite needs Node 22.5+ because it runs the real migration against
+        `node:sqlite`.
+      value: |
+        - Node:
+        - OS:
+        - Android version / device:
+        - App version:
+    validations:
+      required: false
+
+  - type: input
+    id: notification-id
+    attributes:
+      label: notification_id (if a bite behaved oddly)
+      description: >
+        Shown in the push payload and in the ledger at `/verify`. It is what
+        makes a bite traceable through `sent`, `bite_telemetry` and the roll.
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or output
+      description: Paste relevant output. Redact anything that looks like a key.
+      render: shell
+    validations:
+      required: false

@@ -30,9 +30,7 @@
         }
       ]
     },
-    "plugins": [
-      ["onesignal-expo-plugin", { "mode": "production" }]
-    ],
+    "plugins": [["onesignal-expo-plugin", { "mode": "production" }]],
     "extra": {
       "workerUrl": "https://lunker.workers.dev"
     }

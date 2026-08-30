@@ -1,0 +1,141 @@
+name: Security
+
+# Four live credentials back this project — the RevenueCat secret key, the
+# RevenueCat webhook HMAC secret, the OneSignal REST key and ROLL_SERVER_SECRET.
+# The first can move real money, the last lets a player compute their catch
+# before opening the push. This workflow is what stands between them and a
+# repository that goes public at submission.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly, so an advisory published after the code froze still surfaces.
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NPM_CONFIG_FUND: 'false'
+
+jobs:
+  # ── Secrets, over the whole history ────────────────────────────────────────
+  gitleaks:
+    name: Secret scan (full history)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The point is the past. This repo is private now and public at
+          # submission, and a key removed in a later commit is still a key that
+          # ships. A shallow clone would scan only the tip and prove nothing.
+          fetch-depth: 0
+
+      - name: Install gitleaks
+        env:
+          GITLEAKS_VERSION: 8.30.1
+        run: |
+          curl -sSfL \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            -o /tmp/gitleaks.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          sudo install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+
+      # Custom rules live in .gitleaks.toml. GitHub's own secret scanning knows
+      # `sk_`-style provider patterns; it does not know what ROLL_SERVER_SECRET
+      # is, and that is the one whose leak is unrecoverable.
+      - name: gitleaks — committed history
+        run: gitleaks detect --source . --config .gitleaks.toml --redact --no-banner --verbose
+
+      - name: gitleaks — working tree (catches files never committed)
+        run: gitleaks detect --source . --config .gitleaks.toml --redact --no-banner --no-git
+
+  # ── Dependencies ───────────────────────────────────────────────────────────
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Root and Worker are hard gates at `high`. Both are at zero today, and
+      # the Worker is the component that holds every secret.
+      - name: Audit — root (tooling and tests)
+        run: npm audit --audit-level=high
+
+      - name: Audit — worker (the only component holding secrets)
+        working-directory: worker
+        run: npm audit --audit-level=high
+
+      # The app gates at `critical` rather than `high`, and this is a deliberate,
+      # named exception rather than a loosened knob. Every current `high` in the
+      # app tree is metro / postcss / image-size reached through `react-native`,
+      # i.e. the Expo bundler that runs on a developer machine at build time and
+      # is not present in the shipped APK. They are pinned by `expo ~53`, so the
+      # only "fix" is an SDK major — a framework migration, not maintenance, and
+      # not something to run unattended against a frozen submission. They are
+      # printed in full below so the exception is visible rather than silent.
+      - name: Audit — app (gate at critical)
+        working-directory: app
+        run: npm audit --audit-level=critical
+
+      - name: Audit — app, full report (advisory)
+        working-directory: app
+        continue-on-error: true
+        run: |
+          set +e
+          OUT=$(npm audit --audit-level=high)
+          {
+            echo '### App dependency audit (advisory — build-time toolchain)'
+            echo '```'
+            echo "$OUT"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "$OUT"
+
+  # ── Licences ───────────────────────────────────────────────────────────────
+  licenses:
+    name: Licence compliance (app runtime deps)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install (app)
+        working-directory: app
+        run: npm ci --legacy-peer-deps
+
+      # The APK is the artefact that gets distributed on Google Play and the
+      # Galaxy Store, so its runtime dependency tree is the one where a copyleft
+      # licence would actually be a problem. Advisory: a transitive licence
+      # string is not a reason to block a submission at 2am, but an unnoticed
+      # GPL dependency in a store listing is a real one.
+      - name: license-checker
+        continue-on-error: true
+        working-directory: app
+        run: |
+          set +e
+          OUT=$(npx --yes license-checker@25 --production --summary --failOn "GPL-3.0;AGPL-3.0")
+          CODE=$?
+          {
+            echo '### App runtime dependency licences'
+            echo '```'
+            echo "$OUT"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "$OUT"
+          exit $CODE

@@ -1,0 +1,51 @@
+name: Feature request
+description: Suggest a change to the game, the economy or the tooling.
+title: '[Feature] '
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Lunker deliberately does not build several obvious things — a second
+        minigame, an iOS build, a client-rendered paywall, an offline
+        verification harness. Those refusals are listed in the README under
+        *"What we deliberately did not build"* and they are decisions, not gaps.
+        Worth a look before writing.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: The situation you hit, not the solution you have in mind.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+    validations:
+      required: true
+
+  - type: dropdown
+    id: economy
+    attributes:
+      label: Does this touch the economy?
+      description: >
+        Any change to how COIN is granted or spent, how a fish is rolled, or
+        what the client is allowed to assert about its own catch. These need the
+        most care: the client is never permitted to name its catch or move its
+        own balance.
+      options:
+        - 'No'
+        - 'Yes'
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false

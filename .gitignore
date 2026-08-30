@@ -1,11 +1,26 @@
+# Secrets. The Worker's four secrets are set with `wrangler secret put` and are
+# never files in this tree; this is belt-and-braces for local scratch .env files.
 .env
 .env.*
+!.env.example
+
 node_modules/
-__pycache__/
-.next/
 dist/
 coverage/
 .DS_Store
+
+# Cloudflare Workers / wrangler local state (includes the local D1 sqlite file).
 .wrangler/
+
+# Expo / React Native
 .expo/
 *.tsbuildinfo
+android/
+ios/
+
+# Tooling caches
+.eslintcache
+.prettiercache
+
+# gitleaks report output, if run with --report-path
+gitleaks-report.json

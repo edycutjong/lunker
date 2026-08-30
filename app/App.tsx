@@ -130,7 +130,9 @@ export default function App() {
 
 const styles = StyleSheet.create({
   loading: {
-    flex: 1, backgroundColor: color.bgBase,
-    alignItems: 'center', justifyContent: 'center',
+    flex: 1,
+    backgroundColor: color.bgBase,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

@@ -1,0 +1,12 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability
+    about: >
+      Do not file a public issue. Use Security → Report a vulnerability on this
+      repository, or email edy.cu@live.com. See .github/SECURITY.md.
+  - name: SDK friction and DX feedback
+    url: https://github.com/RevenueCat
+    about: >
+      Rough edges we hit in the RevenueCat and OneSignal SDKs are collected in
+      FEEDBACK.md. If you hit one too, add it there rather than opening a bug.

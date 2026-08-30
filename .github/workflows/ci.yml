@@ -1,21 +1,129 @@
 name: CI
 
+# Stage 1 · Quality        format + lint + 207 tests, on every supported Node
+# Stage 1 · Types          tsc --noEmit for the Worker and for the Expo app
+# Stage 2 · Determinism    the content seed, the telemetry fixture, the bench output
+# Stage 3 · Readiness      unfilled-placeholder report (advisory until launch)
+# Stage 4 · Gate           everything above, green, on main
+
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+
+# A superseded run on the same branch is wasted CI minutes and a stale red X.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Keep npm quiet and non-interactive; funding/audit noise hides real failures.
+  NPM_CONFIG_FUND: 'false'
+  NPM_CONFIG_AUDIT: 'false'
 
 jobs:
-  test:
+  # ── Stage 1 · Quality ──────────────────────────────────────────────────────
+  quality:
+    name: Stage 1 · Quality (node ${{ matrix.node }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The suite runs the real migration against `node:sqlite`, which does
+        # not exist before Node 22.5 — Node 20 is not a supported floor and a
+        # matrix entry for it would be a permanently red job. `node:sqlite` is
+        # still marked experimental, so BOTH supported majors are exercised on
+        # main: an API change between 22 and 24 would silently break the only
+        # tests that touch the real schema. PRs run 22 alone for speed.
+        node: ${{ github.event_name == 'push' && fromJSON('["22","24"]') || fromJSON('["22"]') }}
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Format check (Prettier)
+        run: npm run format:check
+
+      - name: Lint (ESLint — Worker, app and shared)
+        run: npm run lint
+
+      - name: Tests (207 across 9 files)
+        run: npm test
+
+      - name: Coverage
+        if: matrix.node == '22'
+        run: npm run test:coverage
+
+      - name: Upload coverage
+        if: matrix.node == '22'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # ── Stage 1 · Types ────────────────────────────────────────────────────────
+  # Two packages, two tsconfigs, two type universes: the Worker resolves
+  # `@cloudflare/workers-types`, the app resolves React Native's. Neither can
+  # typecheck the other's files, so they are a matrix rather than two steps —
+  # a break in one still reports the other.
+  typecheck:
+    name: Stage 1 · Types (${{ matrix.package }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: worker
+            install: npm ci
+          - package: app
+            # Expo SDK 53 ships peer ranges that npm's strict resolver rejects;
+            # this is the install the project has always used.
+            install: npm ci --legacy-peer-deps
+    steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
+          cache-dependency-path: ${{ matrix.package }}/package-lock.json
 
-      - name: Install test deps
-        run: npm install
+      - name: Install (${{ matrix.package }})
+        working-directory: ${{ matrix.package }}
+        run: ${{ matrix.install }}
+
+      - name: Typecheck (${{ matrix.package }})
+        working-directory: ${{ matrix.package }}
+        run: npx tsc --noEmit
+
+  # ── Stage 2 · Determinism ──────────────────────────────────────────────────
+  determinism:
+    name: Stage 2 · Determinism & bench
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install
+        run: npm ci
 
       # The content seed and the telemetry fixture are both deterministic. If
       # either regenerates to different bytes, a published rarity rate or the
@@ -30,9 +138,6 @@ jobs:
           npm run seed:anomalies
           git diff --exit-code seed/telemetry-anomalies.json
 
-      - name: Tests
-        run: npm test
-
       # Asserts the exact documented counts, not merely exit 0.
       - name: Bench reproduces the documented fixture output
         run: |
@@ -42,18 +147,65 @@ jobs:
           echo "$OUT" | grep -q "Answered within window:     17 / 39  (43.6%)"
           echo "$OUT" | grep -q "p50=9,000  p95=104,000  max=118,000   (n=23)"
 
-  typecheck:
+      - name: Publish the bench block to the run summary
+        run: |
+          {
+            echo '### Bench — fixture (validation data, not submittable)'
+            echo '```'
+            npm run --silent bench
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ── Stage 3 · Submission readiness (advisory) ──────────────────────────────
+  # This job is EXPECTED to report unresolved items until the app is deployed
+  # and published: the store URLs, the Worker URL, the D1 database id, the
+  # RevenueCat/OneSignal dashboard ids and the real telemetry figures are all
+  # genuinely unknown today. It is advisory so the pipeline reflects the state
+  # of the CODE, and loud so the state of the SUBMISSION cannot be forgotten.
+  # It must be green before the project is submitted.
+  readiness:
+    name: Stage 3 · Submission readiness (advisory)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Worker typecheck
-        working-directory: worker
-        run: npm install && npx tsc --noEmit
+      - name: Unfilled placeholders
+        id: readiness
+        continue-on-error: true
+        run: |
+          set +e
+          OUT=$(node scripts/check-submission-readiness.mjs)
+          CODE=$?
+          echo "$OUT"
+          {
+            echo '### Submission readiness'
+            if [ "$CODE" -eq 0 ]; then
+              echo 'All placeholders resolved — safe to submit.'
+            else
+              echo '**Not submittable yet.** Every item below must become a real value first.'
+            fi
+            echo '```'
+            echo "$OUT"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $CODE
 
-      - name: App typecheck
-        working-directory: app
-        run: npm install --legacy-peer-deps && npx tsc --noEmit
+  # ── Stage 4 · Gate ─────────────────────────────────────────────────────────
+  gate:
+    name: Stage 4 · Gate
+    needs: [quality, typecheck, determinism]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: All gates passed
+        run: |
+          {
+            echo '### CI gates'
+            echo '- Quality — Prettier, ESLint, 207 tests on Node 22 and 24'
+            echo '- Types — Worker and Expo app both typecheck clean'
+            echo '- Determinism — content seed, telemetry fixture, exact bench output'
+          } >> "$GITHUB_STEP_SUMMARY"

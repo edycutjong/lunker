@@ -1,0 +1,60 @@
+name: CodeQL
+
+# CodeQL genuinely supports this stack. Every line of it is JavaScript or
+# TypeScript — the Cloudflare Worker (`worker/src`), the Expo/React Native app
+# (`app/src`), the shared ESM modules and the three Node CLIs — which is exactly
+# what the `javascript-typescript` pack analyses. It needs no build step, so
+# there is no autobuild to fail silently and no compiled artefact to miss.
+#
+# What it is actually looking for here: the Worker parses an HMAC-verified
+# webhook body, builds SQL against D1, reads a `notification_id` off an
+# untrusted request and reflects request data into an HTML page (`/verify`).
+# Injection, unsafe reflection and missing-validation queries are the ones that
+# earn their keep.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '41 6 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze (javascript-typescript)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          # `security-and-quality` over the default `security-extended`: this is
+          # a small hand-written codebase, and the quality queries (unused
+          # results, comparison mistakes, missing awaits) are the ones that find
+          # real defects in a currency path.
+          queries: security-and-quality
+          config: |
+            paths-ignore:
+              - node_modules
+              - '**/node_modules'
+              - seed
+              - docs/assets
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:javascript-typescript

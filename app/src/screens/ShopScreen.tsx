@@ -11,7 +11,14 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, SafeAreaView, Pressable, Alert, ActivityIndicator,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  SafeAreaView,
+  Pressable,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import type { PurchasesOffering, PurchasesPackage } from 'react-native-purchases';
 
@@ -47,8 +54,8 @@ export function ShopScreen({ onBack }: { onBack: () => void }) {
         // purchase auto-credits COIN with no client code. Invalidate and re-read
         // so the HUD shows the credited balance rather than the stale one.
         await game.refreshBalance({ fresh: true });
-      } catch (e: any) {
-        Alert.alert('Purchase failed', e?.message ?? 'Please try again.');
+      } catch (e: unknown) {
+        Alert.alert('Purchase failed', e instanceof Error ? e.message : 'Please try again.');
       } finally {
         setBusy(null);
       }
@@ -84,7 +91,9 @@ export function ShopScreen({ onBack }: { onBack: () => void }) {
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Tackle Shop</Text>
 
-        {loading && <ActivityIndicator color={color.primary} style={{ marginVertical: space.lg }} />}
+        {loading && (
+          <ActivityIndicator color={color.primary} style={{ marginVertical: space.lg }} />
+        )}
 
         {!loading && !offering && (
           <Text style={styles.empty}>
@@ -124,7 +133,9 @@ export function ShopScreen({ onBack }: { onBack: () => void }) {
           >
             <View style={{ flex: 1 }}>
               <Text style={styles.packName}>{pkg.product.title}</Text>
-              <Text style={styles.packDesc} numberOfLines={1}>{pkg.product.description}</Text>
+              <Text style={styles.packDesc} numberOfLines={1}>
+                {pkg.product.description}
+              </Text>
             </View>
             <Text style={styles.price}>
               {busy === pkg.identifier ? '…' : pkg.product.priceString}
@@ -167,15 +178,22 @@ export function ShopScreen({ onBack }: { onBack: () => void }) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.bgBase, paddingHorizontal: space.lg },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingTop: space.lg, paddingBottom: space.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: space.lg,
+    paddingBottom: space.sm,
   },
   back: { color: color.textMid, fontSize: 16 },
   body: { paddingBottom: space.xxl, gap: space.sm },
   title: { ...font.display, color: color.textHi, fontSize: 28, marginBottom: space.sm },
   section: {
-    color: color.textMid, fontSize: 12, letterSpacing: 1.6,
-    textTransform: 'uppercase', marginTop: space.lg, marginBottom: space.xs,
+    color: color.textMid,
+    fontSize: 12,
+    letterSpacing: 1.6,
+    textTransform: 'uppercase',
+    marginTop: space.lg,
+    marginBottom: space.xs,
   },
   empty: { color: color.textMid, fontSize: 15, marginVertical: space.lg },
 
@@ -185,9 +203,14 @@ const styles = StyleSheet.create({
   active: { color: color.success, fontSize: 15, fontWeight: '600' },
 
   packRow: {
-    flexDirection: 'row', alignItems: 'center', gap: space.md,
-    padding: space.md, borderRadius: radius.lg, borderWidth: 1,
-    borderColor: color.line, backgroundColor: color.bgElevated,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    padding: space.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: color.line,
+    backgroundColor: color.bgElevated,
   },
   packName: { color: color.textHi, fontSize: 17, fontWeight: '600' },
   packDesc: { color: color.textMid, fontSize: 14, marginTop: 2 },
@@ -197,7 +220,10 @@ const styles = StyleSheet.create({
   albumCell: { width: '31%' },
 
   restore: {
-    color: color.textMid, fontSize: 15, textAlign: 'center',
-    marginTop: space.xl, textDecorationLine: 'underline',
+    color: color.textMid,
+    fontSize: 15,
+    textAlign: 'center',
+    marginTop: space.xl,
+    textDecorationLine: 'underline',
   },
 });

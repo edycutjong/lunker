@@ -8,8 +8,22 @@
 
 import Constants from 'expo-constants';
 
+/** The shape this app reads out of `app.json` → `expo.extra`. */
+interface LunkerExtra {
+  workerUrl?: string;
+}
+
 const BASE: string =
-  (Constants.expoConfig?.extra as any)?.workerUrl ?? 'https://lunker.workers.dev';
+  (Constants.expoConfig?.extra as LunkerExtra | undefined)?.workerUrl ??
+  'https://lunker.workers.dev';
+
+/**
+ * Every Worker route answers with a JSON object, and the only field the client
+ * reads generically is `error`. Anything narrower is the caller's `T`.
+ */
+interface WorkerEnvelope {
+  error?: string;
+}
 
 export interface CatchResult {
   fish_id: string;
@@ -55,7 +69,7 @@ async function post<T>(path: string, body: unknown, { retry = true } = {}): Prom
   }
 
   const text = await res.text();
-  let json: any = null;
+  let json: (WorkerEnvelope & Record<string, unknown>) | null = null;
   try {
     json = text ? JSON.parse(text) : null;
   } catch {
@@ -68,7 +82,7 @@ async function post<T>(path: string, body: unknown, { retry = true } = {}): Prom
       body: json,
     });
   }
-  return json as T;
+  return json as unknown as T;
 }
 
 /**

@@ -25,17 +25,20 @@ describe('every lake', () => {
     }
   });
 
-  it.each(LAKES.map((l) => [l.id, l]))('%s: rarer fish never pay less than commoner ones', (_id, lake) => {
-    const byTier = new Map();
-    for (const f of lake.fish) {
-      const tier = RARITY_ORDER.indexOf(f.rarity);
-      byTier.set(tier, Math.min(byTier.get(tier) ?? Infinity, f.coins));
-    }
-    const tiers = [...byTier.keys()].sort((a, b) => a - b);
-    for (let i = 1; i < tiers.length; i++) {
-      expect(byTier.get(tiers[i])).toBeGreaterThan(byTier.get(tiers[i - 1]));
-    }
-  });
+  it.each(LAKES.map((l) => [l.id, l]))(
+    '%s: rarer fish never pay less than commoner ones',
+    (_id, lake) => {
+      const byTier = new Map();
+      for (const f of lake.fish) {
+        const tier = RARITY_ORDER.indexOf(f.rarity);
+        byTier.set(tier, Math.min(byTier.get(tier) ?? Infinity, f.coins));
+      }
+      const tiers = [...byTier.keys()].sort((a, b) => a - b);
+      for (let i = 1; i < tiers.length; i++) {
+        expect(byTier.get(tiers[i])).toBeGreaterThan(byTier.get(tiers[i - 1]));
+      }
+    },
+  );
 
   it('uses unique fish ids across the whole game', () => {
     const ids = LAKES.flatMap((l) => l.fish.map((f) => f.id));

@@ -39,13 +39,13 @@ function stubFetch(plan = {}) {
   });
 }
 
-async function seedBite(db, { nid = NID, user = USER, lake = 'willow', sentAt = NOW - 30_000 } = {}) {
+async function seedBite(
+  db,
+  { nid = NID, user = USER, lake = 'willow', sentAt = NOW - 30_000 } = {},
+) {
   const seed = await deriveRollSeed(nid, 'roll_secret_test');
   await db.prepare('INSERT INTO sent VALUES (?,?,?,?,?)').bind(nid, user, lake, seed, sentAt).run();
-  await db
-    .prepare('INSERT INTO bite_telemetry VALUES (?,NULL,NULL,0,NULL)')
-    .bind(nid)
-    .run();
+  await db.prepare('INSERT INTO bite_telemetry VALUES (?,NULL,NULL,0,NULL)').bind(nid).run();
   return seed;
 }
 
@@ -59,13 +59,21 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe('POST /catch-resolved', () => {
   it('rejects a body with no notification_id', async () => {
-    const res = await catchResolved(postJson('/catch-resolved', { app_user_id: USER, lake_id: 'willow', outcome: 'win' }), deps);
+    const res = await catchResolved(
+      postJson('/catch-resolved', { app_user_id: USER, lake_id: 'willow', outcome: 'win' }),
+      deps,
+    );
     expect(res.status).toBe(400);
   });
 
   it('404s a notification we have no record of sending', async () => {
     const res = await catchResolved(
-      postJson('/catch-resolved', { app_user_id: USER, lake_id: 'willow', notification_id: 'never-sent', outcome: 'win' }),
+      postJson('/catch-resolved', {
+        app_user_id: USER,
+        lake_id: 'willow',
+        notification_id: 'never-sent',
+        outcome: 'win',
+      }),
       deps,
     );
     expect(res.status).toBe(404);
@@ -74,7 +82,12 @@ describe('POST /catch-resolved', () => {
   it('403s an attempt to answer another player bite', async () => {
     await seedBite(deps.db);
     const res = await catchResolved(
-      postJson('/catch-resolved', { app_user_id: 'someone-else', lake_id: 'willow', notification_id: NID, outcome: 'win' }),
+      postJson('/catch-resolved', {
+        app_user_id: 'someone-else',
+        lake_id: 'willow',
+        notification_id: NID,
+        outcome: 'win',
+      }),
       deps,
     );
     expect(res.status).toBe(403);
@@ -84,8 +97,13 @@ describe('POST /catch-resolved', () => {
     await seedBite(deps.db);
     const res = await catchResolved(
       postJson('/catch-resolved', {
-        app_user_id: USER, lake_id: 'willow', notification_id: NID, outcome: 'win',
-        fish: 'the_lunker', rarity: 'legendary', coins: 999999,
+        app_user_id: USER,
+        lake_id: 'willow',
+        notification_id: NID,
+        outcome: 'win',
+        fish: 'the_lunker',
+        rarity: 'legendary',
+        coins: 999999,
       }),
       deps,
     );
@@ -99,7 +117,12 @@ describe('POST /catch-resolved', () => {
   it('grants COIN through the RevenueCat VC REST API, server-side', async () => {
     await seedBite(deps.db);
     const res = await catchResolved(
-      postJson('/catch-resolved', { app_user_id: USER, lake_id: 'willow', notification_id: NID, outcome: 'win' }),
+      postJson('/catch-resolved', {
+        app_user_id: USER,
+        lake_id: 'willow',
+        notification_id: NID,
+        outcome: 'win',
+      }),
       deps,
     );
     const body = await res.json();
@@ -114,14 +137,30 @@ describe('POST /catch-resolved', () => {
 
   it('records the outcome as landed in telemetry', async () => {
     await seedBite(deps.db);
-    await catchResolved(postJson('/catch-resolved', { app_user_id: USER, lake_id: 'willow', notification_id: NID, outcome: 'win' }), deps);
+    await catchResolved(
+      postJson('/catch-resolved', {
+        app_user_id: USER,
+        lake_id: 'willow',
+        notification_id: NID,
+        outcome: 'win',
+      }),
+      deps,
+    );
     const [row] = deps.db.raw('SELECT resolved FROM bite_telemetry WHERE notification_id = ?', NID);
     expect(row.resolved).toBe('landed');
   });
 
   it('grants nothing on a loss but still records the escape', async () => {
     await seedBite(deps.db);
-    const res = await catchResolved(postJson('/catch-resolved', { app_user_id: USER, lake_id: 'willow', notification_id: NID, outcome: 'loss' }), deps);
+    const res = await catchResolved(
+      postJson('/catch-resolved', {
+        app_user_id: USER,
+        lake_id: 'willow',
+        notification_id: NID,
+        outcome: 'loss',
+      }),
+      deps,
+    );
     const body = await res.json();
     expect(body.outcome).toBe('escaped');
     expect(body.catch).toBeNull();
@@ -132,7 +171,13 @@ describe('POST /catch-resolved', () => {
 
   it('is idempotent: a replayed win never grants twice', async () => {
     await seedBite(deps.db);
-    const req = () => postJson('/catch-resolved', { app_user_id: USER, lake_id: 'willow', notification_id: NID, outcome: 'win' });
+    const req = () =>
+      postJson('/catch-resolved', {
+        app_user_id: USER,
+        lake_id: 'willow',
+        notification_id: NID,
+        outcome: 'win',
+      });
     await catchResolved(req(), deps);
     const second = await catchResolved(req(), deps);
     const body = await second.json();
@@ -144,7 +189,13 @@ describe('POST /catch-resolved', () => {
 
   it('returns the same fish on replay, not a fresh roll', async () => {
     await seedBite(deps.db);
-    const req = () => postJson('/catch-resolved', { app_user_id: USER, lake_id: 'willow', notification_id: NID, outcome: 'win' });
+    const req = () =>
+      postJson('/catch-resolved', {
+        app_user_id: USER,
+        lake_id: 'willow',
+        notification_id: NID,
+        outcome: 'win',
+      });
     const a = await (await catchResolved(req(), deps)).json();
     const b = await (await catchResolved(req(), deps)).json();
     expect(b.catch).toEqual(a.catch);
@@ -153,14 +204,30 @@ describe('POST /catch-resolved', () => {
   it('reports settled:false rather than faking success when RevenueCat errors', async () => {
     stubFetch({ rcStatus: 500 });
     await seedBite(deps.db);
-    const res = await catchResolved(postJson('/catch-resolved', { app_user_id: USER, lake_id: 'willow', notification_id: NID, outcome: 'win' }), deps);
+    const res = await catchResolved(
+      postJson('/catch-resolved', {
+        app_user_id: USER,
+        lake_id: 'willow',
+        notification_id: NID,
+        outcome: 'win',
+      }),
+      deps,
+    );
     expect(res.status).toBe(502);
     const body = await res.json();
     expect(body.settled).toBe(false);
   });
 
   it('rejects an unknown lake', async () => {
-    const res = await catchResolved(postJson('/catch-resolved', { app_user_id: USER, lake_id: 'atlantis', notification_id: NID, outcome: 'win' }), deps);
+    const res = await catchResolved(
+      postJson('/catch-resolved', {
+        app_user_id: USER,
+        lake_id: 'atlantis',
+        notification_id: NID,
+        outcome: 'win',
+      }),
+      deps,
+    );
     expect(res.status).toBe(400);
   });
 });
@@ -169,7 +236,10 @@ describe('POST /catch-resolved', () => {
 
 describe('POST /spend-coin', () => {
   it('debits the committed 1,200 COIN for Quarry Pool', async () => {
-    const res = await spendCoin(postJson('/spend-coin', { app_user_id: USER, lake_id: 'quarry' }), deps);
+    const res = await spendCoin(
+      postJson('/spend-coin', { app_user_id: USER, lake_id: 'quarry' }),
+      deps,
+    );
     expect(res.status).toBe(200);
     const rcCall = calls.find((c) => c.url.includes('revenuecat'));
     expect(rcCall.body.adjustments.COIN).toBe(-1200);
@@ -177,7 +247,10 @@ describe('POST /spend-coin', () => {
 
   it('surfaces a 422 as the honest "cannot afford" state, not a dead tap', async () => {
     stubFetch({ rcStatus: 422, rcBody: { balance: 840 } });
-    const res = await spendCoin(postJson('/spend-coin', { app_user_id: USER, lake_id: 'quarry' }), deps);
+    const res = await spendCoin(
+      postJson('/spend-coin', { app_user_id: USER, lake_id: 'quarry' }),
+      deps,
+    );
     expect(res.status).toBe(422);
     const body = await res.json();
     expect(body.reason).toBe('insufficient_coin');
@@ -187,13 +260,19 @@ describe('POST /spend-coin', () => {
 
   it('refuses to sell an entitlement-gated lake for COIN', async () => {
     // Two prices on one thing would quietly undercut the paywall.
-    const res = await spendCoin(postJson('/spend-coin', { app_user_id: USER, lake_id: 'deepsea' }), deps);
+    const res = await spendCoin(
+      postJson('/spend-coin', { app_user_id: USER, lake_id: 'deepsea' }),
+      deps,
+    );
     expect(res.status).toBe(400);
     expect(calls.filter((c) => c.url.includes('revenuecat'))).toHaveLength(0);
   });
 
   it('refuses to charge for a free lake', async () => {
-    const res = await spendCoin(postJson('/spend-coin', { app_user_id: USER, lake_id: 'willow' }), deps);
+    const res = await spendCoin(
+      postJson('/spend-coin', { app_user_id: USER, lake_id: 'willow' }),
+      deps,
+    );
     expect(res.status).toBe(400);
   });
 
@@ -225,20 +304,29 @@ describe('POST /spend-coin', () => {
 
 describe('POST /bite-opened', () => {
   it('404s a notification id that was never sent', async () => {
-    const res = await biteOpened(postJson('/bite-opened', { notification_id: 'fabricated', opened_at: NOW }), deps);
+    const res = await biteOpened(
+      postJson('/bite-opened', { notification_id: 'fabricated', opened_at: NOW }),
+      deps,
+    );
     expect(res.status).toBe(404);
     expect(deps.db.raw('SELECT * FROM bite_telemetry')).toHaveLength(0);
   });
 
   it('records latency measured from send', async () => {
     await seedBite(deps.db, { sentAt: NOW - 12_000 });
-    const res = await biteOpened(postJson('/bite-opened', { notification_id: NID, opened_at: NOW }), deps);
+    const res = await biteOpened(
+      postJson('/bite-opened', { notification_id: NID, opened_at: NOW }),
+      deps,
+    );
     expect((await res.json()).latency_ms).toBe(12_000);
   });
 
   it('flags clock skew instead of clamping a negative latency to zero', async () => {
     await seedBite(deps.db, { sentAt: NOW });
-    const res = await biteOpened(postJson('/bite-opened', { notification_id: NID, opened_at: NOW - 5_000 }), deps);
+    const res = await biteOpened(
+      postJson('/bite-opened', { notification_id: NID, opened_at: NOW - 5_000 }),
+      deps,
+    );
     const body = await res.json();
     expect(body.clock_skew).toBe(true);
     expect(body.latency_ms).toBeNull();
@@ -249,7 +337,10 @@ describe('POST /bite-opened', () => {
 
   it('keeps the first open when Android redelivers the same notification', async () => {
     await seedBite(deps.db, { sentAt: NOW - 60_000 });
-    await biteOpened(postJson('/bite-opened', { notification_id: NID, opened_at: NOW - 55_000 }), deps);
+    await biteOpened(
+      postJson('/bite-opened', { notification_id: NID, opened_at: NOW - 55_000 }),
+      deps,
+    );
     await biteOpened(postJson('/bite-opened', { notification_id: NID, opened_at: NOW }), deps);
     const [row] = deps.db.raw('SELECT * FROM bite_telemetry WHERE notification_id = ?', NID);
     expect(row.latency_ms).toBe(5_000);
@@ -257,7 +348,10 @@ describe('POST /bite-opened', () => {
 
   it('rejects a non-numeric opened_at', async () => {
     await seedBite(deps.db);
-    const res = await biteOpened(postJson('/bite-opened', { notification_id: NID, opened_at: 'now' }), deps);
+    const res = await biteOpened(
+      postJson('/bite-opened', { notification_id: NID, opened_at: 'now' }),
+      deps,
+    );
     expect(res.status).toBe(400);
   });
 });
@@ -265,7 +359,15 @@ describe('POST /bite-opened', () => {
 // ---------------------------------------------------------------------------
 
 describe('POST /webhooks/revenuecat', () => {
-  const event = { event: { id: 'evt-1', type: 'INITIAL_PURCHASE', app_user_id: USER, product_id: 'coins_1600', price: 2.99 } };
+  const event = {
+    event: {
+      id: 'evt-1',
+      type: 'INITIAL_PURCHASE',
+      app_user_id: USER,
+      product_id: 'coins_1600',
+      price: 2.99,
+    },
+  };
 
   async function signed(body, secret = 'whsec_test') {
     const raw = JSON.stringify(body);
@@ -292,7 +394,12 @@ describe('POST /webhooks/revenuecat', () => {
     const res = await revenuecatWebhook(await signed(event), deps);
     expect(res.status).toBe(200);
     const [row] = deps.db.raw('SELECT * FROM purchase_events');
-    expect(row).toMatchObject({ event_id: 'evt-1', product_id: 'coins_1600', event_type: 'INITIAL_PURCHASE', revenue_usd: 2.99 });
+    expect(row).toMatchObject({
+      event_id: 'evt-1',
+      product_id: 'coins_1600',
+      event_type: 'INITIAL_PURCHASE',
+      revenue_usd: 2.99,
+    });
   });
 
   it('is idempotent on RevenueCat retries', async () => {
@@ -313,14 +420,22 @@ describe('POST /webhooks/revenuecat', () => {
   });
 
   it('200s and ignores an unknown event type so retries are not burned', async () => {
-    const res = await revenuecatWebhook(await signed({ event: { id: 'evt-9', type: 'SOME_FUTURE_EVENT' } }), deps);
+    const res = await revenuecatWebhook(
+      await signed({ event: { id: 'evt-9', type: 'SOME_FUTURE_EVENT' } }),
+      deps,
+    );
     expect(res.status).toBe(200);
     expect((await res.json()).ignored).toBe('SOME_FUTURE_EVENT');
     expect(deps.db.raw('SELECT * FROM purchase_events')).toHaveLength(0);
   });
 
   it('records an EXPIRATION, which is what the win-back Journey branches on', async () => {
-    await revenuecatWebhook(await signed({ event: { id: 'evt-2', type: 'EXPIRATION', app_user_id: USER, product_id: 'anglers_pass' } }), deps);
+    await revenuecatWebhook(
+      await signed({
+        event: { id: 'evt-2', type: 'EXPIRATION', app_user_id: USER, product_id: 'anglers_pass' },
+      }),
+      deps,
+    );
     const [row] = deps.db.raw('SELECT * FROM purchase_events');
     expect(row.event_type).toBe('EXPIRATION');
   });
@@ -360,9 +475,23 @@ describe('GET /verify', () => {
 
 describe('POST /player/sync', () => {
   it('upserts targeting state', async () => {
-    await playerSync(postJson('/player/sync', { app_user_id: USER, current_lake: 'quarry', unlocked_lakes: ['willow', 'quarry'], push_enabled: true, tz_offset_min: 420 }), deps);
+    await playerSync(
+      postJson('/player/sync', {
+        app_user_id: USER,
+        current_lake: 'quarry',
+        unlocked_lakes: ['willow', 'quarry'],
+        push_enabled: true,
+        tz_offset_min: 420,
+      }),
+      deps,
+    );
     const [row] = deps.db.raw('SELECT * FROM players');
-    expect(row).toMatchObject({ app_user_id: USER, current_lake: 'quarry', push_enabled: 1, tz_offset_min: 420 });
+    expect(row).toMatchObject({
+      app_user_id: USER,
+      current_lake: 'quarry',
+      push_enabled: 1,
+      tz_offset_min: 420,
+    });
   });
 
   it('records a declined push permission as push_enabled = 0', async () => {
@@ -372,12 +501,18 @@ describe('POST /player/sync', () => {
   });
 
   it('drops lake ids that do not exist', async () => {
-    const res = await playerSync(postJson('/player/sync', { app_user_id: USER, unlocked_lakes: ['willow', 'atlantis'] }), deps);
+    const res = await playerSync(
+      postJson('/player/sync', { app_user_id: USER, unlocked_lakes: ['willow', 'atlantis'] }),
+      deps,
+    );
     expect((await res.json()).unlocked_lakes).toEqual(['willow']);
   });
 
   it('rejects an absurd timezone offset', async () => {
-    const res = await playerSync(postJson('/player/sync', { app_user_id: USER, tz_offset_min: 99999 }), deps);
+    const res = await playerSync(
+      postJson('/player/sync', { app_user_id: USER, tz_offset_min: 99999 }),
+      deps,
+    );
     expect(res.status).toBe(400);
   });
 });
@@ -392,7 +527,10 @@ describe('POST /dev/cast', () => {
 
   it('creates a real sent row and a null-open telemetry row when enabled', async () => {
     const d = makeDeps({ db: new FakeD1(), now: () => NOW, env: { DEV_CAST_ENABLED: '1' } });
-    await d.db.prepare('INSERT INTO players (app_user_id, created_at) VALUES (?, ?)').bind(USER, NOW).run();
+    await d.db
+      .prepare('INSERT INTO players (app_user_id, created_at) VALUES (?, ?)')
+      .bind(USER, NOW)
+      .run();
 
     const res = await devCast(postJson('/dev/cast', { app_user_id: USER, lake_id: 'willow' }), d);
     const body = await res.json();
@@ -406,7 +544,10 @@ describe('POST /dev/cast', () => {
 
   it('discloses that only the timing was triggered, never the roll', async () => {
     const d = makeDeps({ db: new FakeD1(), now: () => NOW, env: { DEV_CAST_ENABLED: '1' } });
-    await d.db.prepare('INSERT INTO players (app_user_id, created_at) VALUES (?, ?)').bind(USER, NOW).run();
+    await d.db
+      .prepare('INSERT INTO players (app_user_id, created_at) VALUES (?, ?)')
+      .bind(USER, NOW)
+      .run();
     const body = await (await devCast(postJson('/dev/cast', { app_user_id: USER }), d)).json();
     expect(body.disclosure).toContain('live server-side roll');
   });
@@ -418,7 +559,12 @@ describe('POST /catch-resolved — the claim window', () => {
     // ever received and cash it in hours later.
     await seedBite(deps.db, { sentAt: NOW - 60 * 60 * 1000 });
     const res = await catchResolved(
-      postJson('/catch-resolved', { app_user_id: USER, lake_id: 'willow', notification_id: NID, outcome: 'win' }),
+      postJson('/catch-resolved', {
+        app_user_id: USER,
+        lake_id: 'willow',
+        notification_id: NID,
+        outcome: 'win',
+      }),
       deps,
     );
     expect(res.status).toBe(410);
@@ -429,7 +575,12 @@ describe('POST /catch-resolved — the claim window', () => {
   it('still records the expired bite as escaped, keeping it in the denominator', async () => {
     await seedBite(deps.db, { sentAt: NOW - 60 * 60 * 1000 });
     await catchResolved(
-      postJson('/catch-resolved', { app_user_id: USER, lake_id: 'willow', notification_id: NID, outcome: 'win' }),
+      postJson('/catch-resolved', {
+        app_user_id: USER,
+        lake_id: 'willow',
+        notification_id: NID,
+        outcome: 'win',
+      }),
       deps,
     );
     const [row] = deps.db.raw('SELECT resolved FROM bite_telemetry WHERE notification_id = ?', NID);
@@ -440,7 +591,12 @@ describe('POST /catch-resolved — the claim window', () => {
     // A push that arrived 90s late must not rob a player of a fish they landed.
     await seedBite(deps.db, { sentAt: NOW - 150_000 });
     const res = await catchResolved(
-      postJson('/catch-resolved', { app_user_id: USER, lake_id: 'willow', notification_id: NID, outcome: 'win' }),
+      postJson('/catch-resolved', {
+        app_user_id: USER,
+        lake_id: 'willow',
+        notification_id: NID,
+        outcome: 'win',
+      }),
       deps,
     );
     expect(res.status).toBe(200);

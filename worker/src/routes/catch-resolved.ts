@@ -56,7 +56,9 @@ export async function catchResolved(req: Request, deps: Deps): Promise<Response>
   // telemetry route enforces: an id we have no record of sending cannot have
   // been answered, and it certainly cannot be paid out.
   const sent = await db
-    .prepare('SELECT notification_id, app_user_id, lake_id, roll_seed, sent_at FROM sent WHERE notification_id = ?')
+    .prepare(
+      'SELECT notification_id, app_user_id, lake_id, roll_seed, sent_at FROM sent WHERE notification_id = ?',
+    )
     .bind(notification_id)
     .first<{ app_user_id: string; lake_id: string; roll_seed: string; sent_at: number }>();
 
@@ -70,7 +72,9 @@ export async function catchResolved(req: Request, deps: Deps): Promise<Response>
     // The fish is long gone. Record the escape so the bite still counts in the
     // denominator, then refuse to pay for it.
     await db
-      .prepare("UPDATE bite_telemetry SET resolved = COALESCE(resolved, 'escaped') WHERE notification_id = ?")
+      .prepare(
+        "UPDATE bite_telemetry SET resolved = COALESCE(resolved, 'escaped') WHERE notification_id = ?",
+      )
       .bind(notification_id)
       .run();
     return json({ outcome: 'escaped', catch: null, balance: null, reason: 'expired' }, 410);
@@ -116,10 +120,7 @@ export async function catchResolved(req: Request, deps: Deps): Promise<Response>
   if (vc.status !== 200) {
     // Be honest upward rather than reporting a catch whose currency never
     // settled. The client renders a retry, not a silent success.
-    return json(
-      { outcome: 'landed', catch: result, balance: null, settled: false },
-      502,
-    );
+    return json({ outcome: 'landed', catch: result, balance: null, settled: false }, 502);
   }
 
   // A first Rare is a Journey entry event, not a push we compose here — the

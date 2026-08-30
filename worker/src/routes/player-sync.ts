@@ -47,7 +47,9 @@ export async function playerSync(req: Request, deps: Deps): Promise<Response> {
   const ts = now();
 
   const previous = await db
-    .prepare('SELECT streak_days, last_active_at, unlocked_lakes FROM players WHERE app_user_id = ?')
+    .prepare(
+      'SELECT streak_days, last_active_at, unlocked_lakes FROM players WHERE app_user_id = ?',
+    )
     .bind(body.app_user_id)
     .first<{ streak_days: number; last_active_at: number | null; unlocked_lakes: string }>();
 
@@ -73,7 +75,16 @@ export async function playerSync(req: Request, deps: Deps): Promise<Response> {
          tz_offset_min  = excluded.tz_offset_min,
          last_active_at = excluded.last_active_at`,
     )
-    .bind(body.app_user_id, currentLake, merged.join(','), streak, body.push_enabled ? 1 : 0, tz, ts, ts)
+    .bind(
+      body.app_user_id,
+      currentLake,
+      merged.join(','),
+      streak,
+      body.push_enabled ? 1 : 0,
+      tz,
+      ts,
+      ts,
+    )
     .run();
 
   // The client renders the streak it is told, and tags OneSignal with it.

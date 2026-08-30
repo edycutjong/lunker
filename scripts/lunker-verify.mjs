@@ -77,9 +77,7 @@ async function cmdBench(args) {
     const data = await res.json();
     // The Worker already ran the identical computation. Print it verbatim
     // rather than recomputing from a summary we cannot re-derive.
-    console.log(
-      formatBench(data.bench, { sourceLabel: `live ledger ${url}`, fixture: false }),
-    );
+    console.log(formatBench(data.bench, { sourceLabel: `live ledger ${url}`, fixture: false }));
     console.log(`Distinct testers:           ${data.testers}`);
     console.log(`HMAC-verified purchases:    ${data.purchase_events}`);
     return 0;
@@ -122,7 +120,9 @@ export function buildAnomalyFixture() {
     });
 
   // --- 20 ordinary rows: 14 answered in-window, 6 answered late -------------
-  const inWindow = [2000, 2500, 3500, 4200, 5000, 5800, 6500, 7200, 8600, 9000, 14000, 33000, 44000, 52000];
+  const inWindow = [
+    2000, 2500, 3500, 4200, 5000, 5800, 6500, 7200, 8600, 9000, 14000, 33000, 44000, 52000,
+  ];
   const late = [64000, 71000, 83000, 95000, 104000, 118000];
   const ordinary = [...inWindow, ...late];
 
@@ -211,7 +211,9 @@ async function cmdSeedAnomalies(args) {
   console.log(`wrote ${out}`);
   console.log(`  sent rows:  ${fixture.sent.length}`);
   console.log(`  ping rows:  ${fixture.pings.length}`);
-  console.log(`  expected:   ${fixture._meta.expected.answered}/${fixture._meta.expected.denominator} = ${fixture._meta.expected.answered_pct}%`);
+  console.log(
+    `  expected:   ${fixture._meta.expected.answered}/${fixture._meta.expected.denominator} = ${fixture._meta.expected.answered_pct}%`,
+  );
   return 0;
 }
 
@@ -288,7 +290,10 @@ async function cmdWebhookVerify(args) {
   console.log(`body bytes: ${enc.encode(raw).length}`);
   console.log(`computed:   ${hex}`);
   if (signature && typeof signature === 'string') {
-    const provided = signature.trim().replace(/^sha256=/i, '').toLowerCase();
+    const provided = signature
+      .trim()
+      .replace(/^sha256=/i, '')
+      .toLowerCase();
     console.log(`provided:   ${provided}`);
     const match = provided.length === hex.length && provided === hex;
     console.log(`match:      ${match ? 'YES' : 'NO'}`);
@@ -314,11 +319,16 @@ async function main() {
   const args = parseArgs(rest);
 
   switch (cmd) {
-    case 'bench':          return cmdBench(args);
-    case 'seed:anomalies': return cmdSeedAnomalies(args);
-    case 'ledger:tail':    return cmdLedgerTail(args);
-    case 'vc:balance':     return cmdVcBalance(args);
-    case 'webhook:verify': return cmdWebhookVerify(args);
+    case 'bench':
+      return cmdBench(args);
+    case 'seed:anomalies':
+      return cmdSeedAnomalies(args);
+    case 'ledger:tail':
+      return cmdLedgerTail(args);
+    case 'vc:balance':
+      return cmdVcBalance(args);
+    case 'webhook:verify':
+      return cmdWebhookVerify(args);
     case undefined:
     case '--help':
     case '-h':

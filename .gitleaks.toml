@@ -1,0 +1,116 @@
+# gitleaks — secret scanning for Lunker.
+#
+# Four live credentials exist for this project and none of them may ever appear
+# in this repo:
+#
+#   REVENUECAT_SECRET_KEY     moves real virtual currency (grant AND spend)
+#   REVENUECAT_WEBHOOK_SECRET the HMAC that makes the purchase ledger trustworthy
+#   ONESIGNAL_REST_API_KEY    can push to every installed device
+#   ROLL_SERVER_SECRET        derives every catch's roll seed — leaking it lets a
+#                             player compute their fish before opening the push
+#
+# GitHub's own secret scanning covers *known provider patterns on pushed
+# commits*. It does not know what `ROLL_SERVER_SECRET` is, and it does not scan
+# history that predates enabling it. Both gaps matter here, because this repo
+# flips private -> public at submission and the whole history flips with it.
+#
+# Run locally:  npm run secrets
+# Run in CI:    .github/workflows/security.yml (fetch-depth: 0 — the point is the past)
+
+title = "lunker"
+
+# Start from gitleaks' built-in provider rules (AWS, GCP, Slack, Stripe, generic
+# private keys, ...) and add the ones specific to this stack below.
+[extend]
+useDefault = true
+
+# ── RevenueCat ─────────────────────────────────────────────────────────────
+
+[[rules]]
+id = "revenuecat-secret-key"
+description = "RevenueCat secret API key (server-side; moves virtual currency)"
+regex = '''\bsk_[A-Za-z0-9]{20,}\b'''
+keywords = ["sk_"]
+entropy = 3.0
+
+[[rules]]
+id = "revenuecat-sdk-key"
+description = "RevenueCat platform SDK key (goog_/appl_/amzn_/strp_)"
+regex = '''\b(?:goog|appl|amzn|strp|rcb)_[A-Za-z0-9]{20,}\b'''
+keywords = ["goog_", "appl_", "amzn_", "strp_", "rcb_"]
+entropy = 3.0
+
+[[rules]]
+id = "revenuecat-webhook-secret"
+description = "RevenueCat webhook HMAC secret assigned to a variable"
+regex = '''(?i)\b(?:REVENUECAT_WEBHOOK_SECRET|WEBHOOK_SECRET)\b\s*[:=]\s*['"]?([A-Za-z0-9_\-+/=]{16,})['"]?'''
+secretGroup = 1
+keywords = ["webhook_secret", "WEBHOOK_SECRET"]
+entropy = 3.0
+
+# ── OneSignal ──────────────────────────────────────────────────────────────
+
+[[rules]]
+id = "onesignal-rest-api-key-v2"
+description = "OneSignal v2 REST API key (os_v2_app_...)"
+regex = '''\bos_v2_app_[a-z0-9_]{40,}\b'''
+keywords = ["os_v2_app_"]
+
+[[rules]]
+id = "onesignal-rest-api-key-legacy"
+description = "OneSignal legacy REST API key assigned to a variable"
+regex = '''(?i)\b(?:ONESIGNAL_REST_API_KEY|ONESIGNAL_API_KEY|REST_API_KEY)\b\s*[:=]\s*['"]?([A-Za-z0-9_\-]{40,})['"]?'''
+secretGroup = 1
+keywords = ["onesignal", "ONESIGNAL", "rest_api_key", "REST_API_KEY"]
+entropy = 3.5
+
+# ── Lunker's own ───────────────────────────────────────────────────────────
+
+[[rules]]
+id = "lunker-roll-server-secret"
+description = "ROLL_SERVER_SECRET — the HMAC key every catch's roll seed derives from"
+regex = '''(?i)\bROLL_SERVER_SECRET\b\s*[:=]\s*['"]?([A-Za-z0-9_\-+/=]{12,})['"]?'''
+secretGroup = 1
+keywords = ["ROLL_SERVER_SECRET", "roll_server_secret"]
+
+[[rules]]
+id = "cloudflare-d1-database-id"
+description = "A real D1 database id committed into wrangler.toml"
+regex = '''(?i)database_id\s*=\s*"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"'''
+secretGroup = 1
+keywords = ["database_id"]
+
+# ── Allowlist ──────────────────────────────────────────────────────────────
+#
+# Deliberately narrow. Anything broader (an `allowlist` on whole directories,
+# or on `tests/`) would let a real key ride in beside a fake one.
+
+[allowlist]
+description = "Known-fake values that exist so the tests can prove the real gate works"
+
+# The literal test secrets in the suite. They are checked in on purpose: the
+# webhook signature tests and the roll-determinism tests need a *known* key to
+# assert against, and a test that generates its own key proves nothing about the
+# HMAC path. Matched exactly, not by prefix.
+regexes = [
+  '''\broll_secret_test\b''',
+  '''\bwhsec_test\b''',
+  # The unfilled-placeholder tokens the readiness gate exists to catch. They are
+  # the opposite of a leaked secret — they are proof nothing real is here yet.
+  '''⟦FILL:[A-Z0-9_]+⟧''',
+  # AsyncStorage namespaces in app/src/lib/storage.ts. `const ALBUM_KEY =` trips
+  # the generic-api-key rule on the variable name alone. These are local cache
+  # keys; by construction nothing secret and no COIN balance is stored under
+  # them — see the file header.
+  '''\blunker\.[a-z_]+\.v\d+\b''',
+]
+
+paths = [
+  # npm's output, not ours; integrity hashes trip the generic high-entropy rule.
+  '''(^|/)package-lock\.json$''',
+  '''(^|/)node_modules/''',
+  # Binary assets.
+  '''^docs/assets/''',
+  # The gitleaks config itself names every credential it hunts for.
+  '''^\.gitleaks\.toml$''',
+]

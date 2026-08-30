@@ -84,7 +84,7 @@ describe('parseBiteLink', () => {
     // while the shipped parser broke.
     const app = readFileSync(resolve(ROOT, 'app/App.tsx'), 'utf8');
     const shipped = /const match = \/\^lunker[^\n]+\n/.exec(app)?.[0].trim();
-    const here = "const match = /^lunker:\\/\\/bite\\/([A-Za-z0-9_-]+)(\\?.*)?$/.exec(url.trim());";
+    const here = 'const match = /^lunker:\\/\\/bite\\/([A-Za-z0-9_-]+)(\\?.*)?$/.exec(url.trim());';
     expect(shipped).toBe(here);
   });
 });

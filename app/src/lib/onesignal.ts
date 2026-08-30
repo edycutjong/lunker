@@ -13,7 +13,7 @@
  * does not degrade the experience — it deletes it.
  */
 
-import { OneSignal, LogLevel } from 'react-native-onesignal';
+import { OneSignal, LogLevel, type NotificationClickEvent } from 'react-native-onesignal';
 
 export type BiteHandler = (lakeId: string, notificationId: string) => void;
 
@@ -92,8 +92,10 @@ export function syncTags(tags: {
  * sent is rejected, which is what makes the headline number attack-proof.
  */
 export function onBiteOpened(handler: BiteHandler): () => void {
-  const listener = (event: any) => {
-    const data = event?.notification?.additionalData ?? {};
+  const listener = (event: NotificationClickEvent) => {
+    // `additionalData` is `object` in the SDK's types — it is whatever the
+    // Worker put in `data`, so it is narrowed here rather than trusted.
+    const data = (event?.notification?.additionalData ?? {}) as Record<string, unknown>;
     const lakeId = data.lake_id;
     const notificationId = data.notification_id;
     if (lakeId && notificationId) handler(String(lakeId), String(notificationId));

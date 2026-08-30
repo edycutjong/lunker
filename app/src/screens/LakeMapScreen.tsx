@@ -9,7 +9,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, Alert } from 'react-native';
 
-import { LAKES } from '../../../shared/content.js';
+import { LAKES, type Lake, type Fish } from '../../../shared/content.js';
 import { CoinBalance, LakeCard, PrimaryButton, type LakeLock } from '../components';
 import { color, font, space, type Rarity } from '../theme/tokens';
 import { useGame } from '../state/GameContext';
@@ -18,20 +18,24 @@ import * as api from '../lib/api';
 
 const RANK: Rarity[] = ['common', 'uncommon', 'rare', 'legendary'];
 
-function topRarity(lake: any): Rarity {
+function topRarity(lake: Lake): Rarity {
   return lake.fish.reduce(
-    (best: Rarity, f: any) => (RANK.indexOf(f.rarity) > RANK.indexOf(best) ? f.rarity : best),
+    (best: Rarity, f: Fish) => (RANK.indexOf(f.rarity) > RANK.indexOf(best) ? f.rarity : best),
     'common' as Rarity,
   );
 }
 
 export function LakeMapScreen({
-  onCast, onOpenShop,
-}: { onCast: (lakeId: string) => void; onOpenShop: () => void }) {
+  onCast,
+  onOpenShop,
+}: {
+  onCast: (lakeId: string) => void;
+  onOpenShop: () => void;
+}) {
   const game = useGame();
   const [busy, setBusy] = useState<string | null>(null);
 
-  async function handleLakePress(lake: any) {
+  async function handleLakePress(lake: Lake) {
     const unlocked = game.unlockedLakes.includes(lake.id);
 
     if (unlocked) {
@@ -72,7 +76,10 @@ export function LakeMapScreen({
             [{ text: 'Keep fishing' }, { text: 'Tackle Shop', onPress: onOpenShop }],
           );
         } else {
-          Alert.alert('Could not settle that', 'The server did not confirm the spend. Nothing was charged.');
+          Alert.alert(
+            'Could not settle that',
+            'The server did not confirm the spend. Nothing was charged.',
+          );
         }
       } finally {
         setBusy(null);
@@ -98,7 +105,7 @@ export function LakeMapScreen({
       )}
 
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-        {LAKES.map((lake: any) => {
+        {LAKES.map((lake: Lake) => {
           const unlocked = game.unlockedLakes.includes(lake.id);
           const lock: LakeLock = unlocked
             ? { type: 'open' }
@@ -130,13 +137,19 @@ export function LakeMapScreen({
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.bgBase, paddingHorizontal: space.lg },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingTop: space.lg, paddingBottom: space.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: space.lg,
+    paddingBottom: space.md,
   },
   title: { ...font.display, color: color.textHi, fontSize: 28 },
   notice: {
-    backgroundColor: 'rgba(255,160,90,0.10)', borderLeftWidth: 2,
-    borderLeftColor: color.accent, padding: space.md, borderRadius: 10,
+    backgroundColor: 'rgba(255,160,90,0.10)',
+    borderLeftWidth: 2,
+    borderLeftColor: color.accent,
+    padding: space.md,
+    borderRadius: 10,
     marginBottom: space.md,
   },
   noticeText: { color: color.textMid, fontSize: 14, lineHeight: 21 },

@@ -99,7 +99,10 @@ describe('POST /player/sync', () => {
     // The bug this replaces: a relaunch pushed ['willow','reeds'] and the player
     // who had paid 1,200 COIN for Quarry saw it locked and priced again.
     await playerSync(
-      postJson('/player/sync', { app_user_id: USER, unlocked_lakes: ['willow', 'reeds', 'quarry'] }),
+      postJson('/player/sync', {
+        app_user_id: USER,
+        unlocked_lakes: ['willow', 'reeds', 'quarry'],
+      }),
       deps,
     );
     const res = await playerSync(
@@ -132,7 +135,9 @@ describe('GET /verify — the purchase counter', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   async function signedEvent(id, type) {
-    const raw = JSON.stringify({ event: { id, type, app_user_id: USER, product_id: 'coins_500', price: 0.99 } });
+    const raw = JSON.stringify({
+      event: { id, type, app_user_id: USER, product_id: 'coins_500', price: 0.99 },
+    });
     return new Request('https://lunker.test/webhooks/revenuecat', {
       method: 'POST',
       headers: { 'x-revenuecat-signature': await hmacSha256Hex(raw, 'whsec_test') },

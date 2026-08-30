@@ -20,7 +20,9 @@ import { useGame } from '../state/GameContext';
 import type { CatchResponse } from '../lib/api';
 
 export function CatchScreen({
-  outcome, response, onDone,
+  outcome,
+  response,
+  onDone,
 }: {
   outcome: 'landed' | 'escaped';
   response: CatchResponse | null;
@@ -100,23 +102,33 @@ export function CatchScreen({
 
 const styles = StyleSheet.create({
   root: {
-    flex: 1, backgroundColor: color.bgBase,
-    paddingHorizontal: space.lg, paddingBottom: space.xl,
+    flex: 1,
+    backgroundColor: color.bgBase,
+    paddingHorizontal: space.lg,
+    paddingBottom: space.xl,
   },
   center: { flex: 1, justifyContent: 'center', gap: space.lg },
   landed: {
-    ...font.display, color: color.success, fontSize: 15,
-    letterSpacing: 3, textAlign: 'center',
+    ...font.display,
+    color: color.success,
+    fontSize: 15,
+    letterSpacing: 3,
+    textAlign: 'center',
   },
   balanceRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: space.sm,
   },
   balanceLabel: { color: color.textMid, fontSize: 15 },
   pending: { color: color.accent, fontSize: 14, textAlign: 'center' },
   escapedTitle: { ...font.display, color: color.textHi, fontSize: 30, textAlign: 'center' },
   escapedBody: {
-    color: color.textMid, fontSize: 16, textAlign: 'center',
-    paddingHorizontal: space.lg, lineHeight: 24,
+    color: color.textMid,
+    fontSize: 16,
+    textAlign: 'center',
+    paddingHorizontal: space.lg,
+    lineHeight: 24,
   },
 });

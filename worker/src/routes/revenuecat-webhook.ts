@@ -14,6 +14,27 @@ import { verifySignature } from '../lib/webhook.js';
 import type { Deps } from '../types.js';
 import { json } from '../lib/http.js';
 
+/**
+ * The subset of a RevenueCat webhook event this ledger reads.
+ *
+ * Every field is optional on purpose. The HMAC proves *who* sent the body; it
+ * proves nothing about its shape, and RevenueCat is explicitly free to add
+ * fields without a version bump. Declaring the fields required would turn a
+ * forward-compatible payload into a 500.
+ */
+interface RevenueCatEvent {
+  id?: string;
+  type?: string;
+  app_user_id?: string;
+  original_app_user_id?: string;
+  product_id?: string;
+  price_in_purchased_currency?: number;
+  price?: number;
+}
+
+/** RevenueCat nests under `event`; older payloads are the event itself. */
+type WebhookBody = (RevenueCatEvent & { event?: RevenueCatEvent }) | null;
+
 /** Event types that represent money actually moving. */
 const LEDGER_EVENTS = new Set([
   'INITIAL_PURCHASE',
@@ -31,13 +52,12 @@ export async function revenuecatWebhook(req: Request, deps: Deps): Promise<Respo
   // key order, and the mismatch that follows looks exactly like a bad secret.
   const raw = await req.text();
 
-  const signature =
-    req.headers.get('x-revenuecat-signature') ?? req.headers.get('authorization');
+  const signature = req.headers.get('x-revenuecat-signature') ?? req.headers.get('authorization');
 
   const ok = await verifySignature(raw, signature, env.REVENUECAT_WEBHOOK_SECRET);
   if (!ok) return json({ error: 'invalid signature' }, 401);
 
-  let payload: any;
+  let payload: WebhookBody;
   try {
     payload = JSON.parse(raw);
   } catch {
@@ -46,9 +66,9 @@ export async function revenuecatWebhook(req: Request, deps: Deps): Promise<Respo
     return json({ error: 'malformed json' }, 400);
   }
 
-  const event = payload?.event ?? payload;
-  const eventId: string | undefined = event?.id;
-  const type: string | undefined = event?.type;
+  const event: RevenueCatEvent = payload?.event ?? payload ?? {};
+  const eventId: string | undefined = event.id;
+  const type: string | undefined = event.type;
 
   if (!eventId || !type) return json({ error: 'missing event id or type' }, 400);
 

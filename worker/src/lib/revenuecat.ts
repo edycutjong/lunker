@@ -35,10 +35,7 @@ export class RevenueCatClient {
    * nothing. We never read-then-write, because a read-then-write is exactly the
    * race a determined player exploits by backgrounding the app mid-purchase.
    */
-  async adjust(
-    appUserId: string,
-    adjustments: Record<string, number>,
-  ): Promise<VcResult> {
+  async adjust(appUserId: string, adjustments: Record<string, number>): Promise<VcResult> {
     const url = `${BASE}/projects/${encodeURIComponent(
       this.projectId,
     )}/customers/${encodeURIComponent(appUserId)}/virtual_currencies/transactions`;
@@ -85,7 +82,7 @@ export class RevenueCatClient {
  */
 export function readBalance(raw: unknown): number | null {
   if (!raw || typeof raw !== 'object') return null;
-  const obj = raw as Record<string, any>;
+  const obj = raw as Record<string, unknown>;
 
   if (typeof obj.balance === 'number') return obj.balance;
 
@@ -93,15 +90,23 @@ export function readBalance(raw: unknown): number | null {
   for (const c of candidates) {
     if (!c) continue;
     if (Array.isArray(c)) {
-      const coin = c.find(
-        (i: any) => i?.code === 'COIN' || i?.currency_code === 'COIN',
-      );
-      if (coin && typeof coin.balance === 'number') return coin.balance;
+      const coin = c.find((i) => {
+        const r = asRecord(i);
+        return r?.code === 'COIN' || r?.currency_code === 'COIN';
+      });
+      const balance = asRecord(coin)?.balance;
+      if (typeof balance === 'number') return balance;
     } else if (typeof c === 'object') {
-      const coin = c.COIN;
+      const coin = (c as Record<string, unknown>).COIN;
       if (typeof coin === 'number') return coin;
-      if (coin && typeof coin.balance === 'number') return coin.balance;
+      const balance = asRecord(coin)?.balance;
+      if (typeof balance === 'number') return balance;
     }
   }
   return null;
+}
+
+/** Narrow an unknown to an indexable object, or `undefined`. */
+function asRecord(v: unknown): Record<string, unknown> | undefined {
+  return v && typeof v === 'object' ? (v as Record<string, unknown>) : undefined;
 }

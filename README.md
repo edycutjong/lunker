@@ -14,6 +14,11 @@
 
 **207 tests** · built for RevenueCat Shipaton 2026 — *Keep Them Coming Back* and *Best Game*
 
+[![CI](⟦FILL:REPO_URL⟧/actions/workflows/ci.yml/badge.svg)](⟦FILL:REPO_URL⟧/actions/workflows/ci.yml)
+[![CodeQL](⟦FILL:REPO_URL⟧/actions/workflows/codeql.yml/badge.svg)](⟦FILL:REPO_URL⟧/actions/workflows/codeql.yml)
+[![Security](⟦FILL:REPO_URL⟧/actions/workflows/security.yml/badge.svg)](⟦FILL:REPO_URL⟧/actions/workflows/security.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-3fdbb6.svg)](LICENSE)
+
 </div>
 
 ---
@@ -124,12 +129,59 @@ built: [**ARCHITECTURE.md**](ARCHITECTURE.md).
 - **Push copy fits Android's ~65-char pre-ellipsis budget**, so "60s before it
   escapes" is readable without expanding the notification.
 
+## 🛡 The harness
+
+Four secrets back this project — the RevenueCat secret key, the webhook HMAC
+secret, the OneSignal REST key, and `ROLL_SERVER_SECRET`, which derives every
+catch's roll seed. The first can move money; the last lets a player compute their
+fish before opening the push. None is in this repository, and the pipeline is
+built around keeping it that way.
+
+| Layer | Tool | Gate |
+|---|---|---|
+| Format | Prettier | hard — `npm run format:check` |
+| Lint | ESLint 9, one flat config across the Worker, the RN app and shared ESM | hard — `npm run lint` |
+| Types | `tsc --noEmit` on two independent tsconfigs (Workers types, React Native types) | hard, as a matrix |
+| Tests | Vitest, 207 across 9 files, on Node 22 **and** 24 | hard |
+| Determinism | content seed + telemetry fixture byte-compared; bench output asserted literally | hard |
+| Secrets | gitleaks over the **full git history** and the working tree, with rules for all four secrets | hard |
+| SAST | CodeQL `javascript-typescript`, `security-and-quality` | hard |
+| Dependencies | `npm audit` across all three manifests · Dependabot, grouped, no majors | hard |
+| Readiness | `npm run readiness` — fails while any unfilled placeholder survives | advisory in CI, **required before submission** |
+
+Two of those are worth a sentence each, because they are the ones that are
+usually decoration:
+
+**The secret scan runs with `fetch-depth: 0`.** This repo is private during the
+build and public at submission, and the whole history goes public with it. A key
+removed in a later commit is still a key that ships, so scanning the tip proves
+nothing. `.gitleaks.toml` carries rules for `ROLL_SERVER_SECRET` specifically —
+GitHub's own scanner knows `sk_`-shaped provider keys but has never heard of that
+one, and it is the leak with no recovery.
+
+**The Node matrix is 22 and 24, and 20 is deliberately absent.** The route tests
+run against real SQLite via `node:sqlite`, which does not exist before 22.5 — so
+20 is not a supported floor rather than an untested one. `node:sqlite` is still
+experimental, which is exactly why both supported majors run.
+
+Security claims and the test that pins each one:
+[**.github/SECURITY.md**](.github/SECURITY.md). Contributing:
+[**.github/CONTRIBUTING.md**](.github/CONTRIBUTING.md).
+
 ## 🏗 Run it
+
+Node **22.5+** — the tests run the real migration against `node:sqlite`.
 
 ```sh
 npm install && npm test          # 207 tests
 npm run seed                     # deterministic content seed
 npm run bench                    # the killer-number computation, on fixture data
+
+npm run ci                       # format + lint + tests, what CI runs
+npm run typecheck                # tsc --noEmit for the Worker AND the app
+npm run audit                    # dependency CVEs at high+
+npm run secrets                  # gitleaks over the history (needs gitleaks installed)
+npm run readiness                # fails while any unfilled placeholder survives
 
 cd worker && npm install
 npx wrangler d1 migrations apply lunker --local
@@ -141,7 +193,8 @@ npx expo run:android
 
 Secrets are never in this repo. The Worker needs `REVENUECAT_SECRET_KEY`,
 `REVENUECAT_WEBHOOK_SECRET`, `ONESIGNAL_REST_API_KEY` and `ROLL_SERVER_SECRET`
-via `wrangler secret put`.
+via `wrangler secret put`. Every key, where to get it and which of the three
+places it belongs in: [`.env.example`](.env.example).
 
 ## 🙅 What we deliberately did *not* build
 
@@ -158,6 +211,13 @@ Documented because the refusals are decisions, not gaps:
   round-trip — a push delivered by OneSignal, a currency grant settled by
   RevenueCat. A harness that made it pass offline would be testing something we
   do not ship.
+- **No Playwright, no Lighthouse.** There is no web app to drive. The only HTTP
+  surfaces are the Worker's landing page and `/verify`, and both are already
+  asserted in `tests/routes.test.js` against real SQLite running the real
+  migration. A browser runner here would be a green checkmark measuring nothing.
+- **No type-aware ESLint rules.** `tsc --noEmit` already runs against both
+  tsconfigs and is the authoritative type gate. A third type graph over the same
+  files would produce disagreements that are config bugs, not code bugs.
 
 ## 📝 What we got wrong
 

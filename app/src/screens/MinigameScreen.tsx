@@ -14,7 +14,13 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, SafeAreaView } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
-import { createState, step, remaining, DEFAULTS, type TensionState } from '../../../shared/tension.js';
+import {
+  createState,
+  step,
+  remaining,
+  DEFAULTS,
+  type TensionState,
+} from '../../../shared/tension.js';
 import { getLake } from '../../../shared/content.js';
 import { CountdownRing, TensionArc } from '../components';
 import { color, font, space } from '../theme/tokens';
@@ -22,12 +28,17 @@ import { useGame } from '../state/GameContext';
 import * as api from '../lib/api';
 
 export function MinigameScreen({
-  lakeId, notificationId, onResolved,
+  lakeId,
+  notificationId,
+  onResolved,
 }: {
   lakeId: string;
   /** Null when the player cast manually rather than answering a bite. */
   notificationId: string | null;
-  onResolved: (result: { outcome: 'landed' | 'escaped'; response: api.CatchResponse | null }) => void;
+  onResolved: (result: {
+    outcome: 'landed' | 'escaped';
+    response: api.CatchResponse | null;
+  }) => void;
 }) {
   const game = useGame();
   const lake = getLake(lakeId);
@@ -128,8 +139,12 @@ export function MinigameScreen({
 
       <Pressable
         style={styles.arena}
-        onPressIn={() => { holding.current = true; }}
-        onPressOut={() => { holding.current = false; }}
+        onPressIn={() => {
+          holding.current = true;
+        }}
+        onPressOut={() => {
+          holding.current = false;
+        }}
         accessibilityLabel="Hold to reel in. Keep the needle inside the green zone."
       >
         <TensionArc
@@ -157,7 +172,9 @@ export function MinigameScreen({
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.bgBase, paddingHorizontal: space.lg },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingTop: space.lg,
   },
   lakeName: { ...font.display, color: color.textHi, fontSize: 22 },

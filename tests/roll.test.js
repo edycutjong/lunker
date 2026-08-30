@@ -140,7 +140,9 @@ describe('rollCatch', () => {
     const seeds = await Promise.all(
       Array.from({ length: 40 }, (_, i) => deriveRollSeed(`steer-${i}`, SECRET)),
     );
-    const results = new Set(seeds.map((s) => `${rollCatch('willow', s).fish_id}:${rollCatch('willow', s).mass_kg}`));
+    const results = new Set(
+      seeds.map((s) => `${rollCatch('willow', s).fish_id}:${rollCatch('willow', s).mass_kg}`),
+    );
     expect(results.size).toBeGreaterThan(10);
   });
 });

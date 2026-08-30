@@ -18,16 +18,35 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 const SKIP_DIRS = new Set([
-  'node_modules', '.git', '.expo', 'dist', 'build', 'coverage', 'android', 'ios', '.wrangler',
+  'node_modules',
+  '.git',
+  '.expo',
+  'dist',
+  'build',
+  'coverage',
+  'android',
+  'ios',
+  '.wrangler',
 ]);
 const TEXT_EXT = new Set([
-  '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json', '.md', '.html', '.toml', '.yml', '.yaml', '.sql', '.sh',
+  '.ts',
+  '.tsx',
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.cjs',
+  '.json',
+  '.md',
+  '.html',
+  '.toml',
+  '.yml',
+  '.yaml',
+  '.sql',
+  '.sh',
 ]);
 
 /** Files that are ALLOWED to mention the token, because they define the gate. */
-const ALLOWLIST = new Set([
-  'scripts/check-submission-readiness.mjs',
-]);
+const ALLOWLIST = new Set(['scripts/check-submission-readiness.mjs']);
 
 const FILL = /⟦FILL[^⟧]*⟧/g;
 
@@ -63,7 +82,12 @@ async function main() {
     scanned++;
 
     for (const match of text.matchAll(FILL)) {
-      findings.push({ rel, line: lineOf(text, match.index), token: match[0], why: 'unfilled token' });
+      findings.push({
+        rel,
+        line: lineOf(text, match.index),
+        token: match[0],
+        why: 'unfilled token',
+      });
     }
     for (const p of PLACEHOLDERS) {
       for (const match of text.matchAll(p.re)) {

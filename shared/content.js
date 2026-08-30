@@ -48,12 +48,54 @@ export const LAKES = [
     // honest rare in one session is the path of least resistance — at 1% the
     // temptation to hardcode the outcome becomes real.
     fish: [
-      { id: 'silver_roach',    name: 'Silver Roach',    rarity: 'common',   weight: 44,  mass_kg: [0.2, 0.9],  coins: 20 },
-      { id: 'bronze_carp',     name: 'Bronze Carp',     rarity: 'common',   weight: 26,  mass_kg: [0.8, 2.4],  coins: 30 },
-      { id: 'reed_pike',       name: 'Reed Pike',       rarity: 'uncommon', weight: 18,  mass_kg: [1.5, 4.0],  coins: 60 },
-      { id: 'ghost_perch',     name: 'Ghost Perch',     rarity: 'uncommon', weight: 8,   mass_kg: [0.9, 2.1],  coins: 75 },
-      { id: 'moonlight_koi',   name: 'Moonlight Koi',   rarity: 'rare',     weight: 3.5, mass_kg: [3.6, 4.8],  coins: 120 },
-      { id: 'willow_sturgeon', name: 'Willow Sturgeon', rarity: 'rare',     weight: 0.5, mass_kg: [8.0, 14.0], coins: 260 },
+      {
+        id: 'silver_roach',
+        name: 'Silver Roach',
+        rarity: 'common',
+        weight: 44,
+        mass_kg: [0.2, 0.9],
+        coins: 20,
+      },
+      {
+        id: 'bronze_carp',
+        name: 'Bronze Carp',
+        rarity: 'common',
+        weight: 26,
+        mass_kg: [0.8, 2.4],
+        coins: 30,
+      },
+      {
+        id: 'reed_pike',
+        name: 'Reed Pike',
+        rarity: 'uncommon',
+        weight: 18,
+        mass_kg: [1.5, 4.0],
+        coins: 60,
+      },
+      {
+        id: 'ghost_perch',
+        name: 'Ghost Perch',
+        rarity: 'uncommon',
+        weight: 8,
+        mass_kg: [0.9, 2.1],
+        coins: 75,
+      },
+      {
+        id: 'moonlight_koi',
+        name: 'Moonlight Koi',
+        rarity: 'rare',
+        weight: 3.5,
+        mass_kg: [3.6, 4.8],
+        coins: 120,
+      },
+      {
+        id: 'willow_sturgeon',
+        name: 'Willow Sturgeon',
+        rarity: 'rare',
+        weight: 0.5,
+        mass_kg: [8.0, 14.0],
+        coins: 260,
+      },
     ],
   },
   {
@@ -65,10 +107,38 @@ export const LAKES = [
     // Teaches the loop and makes Willow's rares feel earned. Mean grant 25.1
     // COIN — deliberately the poorest water in the game.
     fish: [
-      { id: 'minnow_shoal', name: 'Minnow Shoal', rarity: 'common',   weight: 52, mass_kg: [0.1, 0.5], coins: 15 },
-      { id: 'reed_roach',   name: 'Reed Roach',   rarity: 'common',   weight: 30, mass_kg: [0.3, 1.1], coins: 22 },
-      { id: 'green_tench',  name: 'Green Tench',  rarity: 'uncommon', weight: 13, mass_kg: [1.0, 2.6], coins: 55 },
-      { id: 'glass_eel',    name: 'Glass Eel',    rarity: 'uncommon', weight: 5,  mass_kg: [0.6, 1.4], coins: 70 },
+      {
+        id: 'minnow_shoal',
+        name: 'Minnow Shoal',
+        rarity: 'common',
+        weight: 52,
+        mass_kg: [0.1, 0.5],
+        coins: 15,
+      },
+      {
+        id: 'reed_roach',
+        name: 'Reed Roach',
+        rarity: 'common',
+        weight: 30,
+        mass_kg: [0.3, 1.1],
+        coins: 22,
+      },
+      {
+        id: 'green_tench',
+        name: 'Green Tench',
+        rarity: 'uncommon',
+        weight: 13,
+        mass_kg: [1.0, 2.6],
+        coins: 55,
+      },
+      {
+        id: 'glass_eel',
+        name: 'Glass Eel',
+        rarity: 'uncommon',
+        weight: 5,
+        mass_kg: [0.6, 1.4],
+        coins: 70,
+      },
     ],
   },
   {
@@ -81,11 +151,46 @@ export const LAKES = [
     // yet" state is demonstrated. Mean grant 100.3 COIN — it repays its own
     // 1,200 in ~12 landed catches, so the unlock reads as an investment.
     fish: [
-      { id: 'slate_bream',       name: 'Slate Bream',       rarity: 'uncommon', weight: 46, mass_kg: [0.7, 2.2],  coins: 70 },
-      { id: 'quarry_chub',       name: 'Quarry Chub',       rarity: 'uncommon', weight: 32, mass_kg: [1.2, 3.0],  coins: 85 },
-      { id: 'copper_bass',       name: 'Copper Bass',       rarity: 'rare',     weight: 15, mass_kg: [2.8, 5.5],  coins: 150 },
-      { id: 'anvil_catfish',     name: 'Anvil Catfish',     rarity: 'rare',     weight: 6,  mass_kg: [6.0, 12.0], coins: 240 },
-      { id: 'drowned_bell_carp', name: 'Drowned Bell Carp', rarity: 'rare',     weight: 1,  mass_kg: [9.0, 18.0], coins: 400 },
+      {
+        id: 'slate_bream',
+        name: 'Slate Bream',
+        rarity: 'uncommon',
+        weight: 46,
+        mass_kg: [0.7, 2.2],
+        coins: 70,
+      },
+      {
+        id: 'quarry_chub',
+        name: 'Quarry Chub',
+        rarity: 'uncommon',
+        weight: 32,
+        mass_kg: [1.2, 3.0],
+        coins: 85,
+      },
+      {
+        id: 'copper_bass',
+        name: 'Copper Bass',
+        rarity: 'rare',
+        weight: 15,
+        mass_kg: [2.8, 5.5],
+        coins: 150,
+      },
+      {
+        id: 'anvil_catfish',
+        name: 'Anvil Catfish',
+        rarity: 'rare',
+        weight: 6,
+        mass_kg: [6.0, 12.0],
+        coins: 240,
+      },
+      {
+        id: 'drowned_bell_carp',
+        name: 'Drowned Bell Carp',
+        rarity: 'rare',
+        weight: 1,
+        mass_kg: [9.0, 18.0],
+        coins: 400,
+      },
     ],
   },
   {
@@ -97,11 +202,46 @@ export const LAKES = [
     // The RevenueCat paywall rail. Fewer bites, far richer table — the Pass buys
     // depth per bite, not more bites, so it never reads as pay-to-spam.
     fish: [
-      { id: 'lantern_snapper',    name: 'Lantern Snapper',    rarity: 'rare',      weight: 48, mass_kg: [1.5, 4.0],   coins: 180 },
-      { id: 'abyss_ray',          name: 'Abyss Ray',          rarity: 'rare',      weight: 30, mass_kg: [4.0, 9.0],   coins: 260 },
-      { id: 'hadal_oarfish',      name: 'Hadal Oarfish',      rarity: 'legendary', weight: 14, mass_kg: [8.0, 17.0],  coins: 520 },
-      { id: 'moonwake_leviathan', name: 'Moonwake Leviathan', rarity: 'legendary', weight: 6,  mass_kg: [20.0, 48.0], coins: 900 },
-      { id: 'the_lunker',         name: 'The Lunker',         rarity: 'legendary', weight: 2,  mass_kg: [30.0, 60.0], coins: 1500 },
+      {
+        id: 'lantern_snapper',
+        name: 'Lantern Snapper',
+        rarity: 'rare',
+        weight: 48,
+        mass_kg: [1.5, 4.0],
+        coins: 180,
+      },
+      {
+        id: 'abyss_ray',
+        name: 'Abyss Ray',
+        rarity: 'rare',
+        weight: 30,
+        mass_kg: [4.0, 9.0],
+        coins: 260,
+      },
+      {
+        id: 'hadal_oarfish',
+        name: 'Hadal Oarfish',
+        rarity: 'legendary',
+        weight: 14,
+        mass_kg: [8.0, 17.0],
+        coins: 520,
+      },
+      {
+        id: 'moonwake_leviathan',
+        name: 'Moonwake Leviathan',
+        rarity: 'legendary',
+        weight: 6,
+        mass_kg: [20.0, 48.0],
+        coins: 900,
+      },
+      {
+        id: 'the_lunker',
+        name: 'The Lunker',
+        rarity: 'legendary',
+        weight: 2,
+        mass_kg: [30.0, 60.0],
+        coins: 1500,
+      },
     ],
   },
 ];
@@ -115,10 +255,39 @@ export const LAKES = [
  * structurally unbuildable.
  */
 export const PRODUCTS = [
-  { product_id: 'coins_500',   display: 'Bait Tin',      coins: 500,  price_tier_usd: 0.99, kind: 'consumable',   vc_associated: true },
-  { product_id: 'coins_1600',  display: 'Tackle Box',    coins: 1600, price_tier_usd: 2.99, kind: 'consumable',   vc_associated: true },
-  { product_id: 'coins_6000',  display: 'Trawler Haul',  coins: 6000, price_tier_usd: 9.99, kind: 'consumable',   vc_associated: true },
-  { product_id: 'anglers_pass', display: "Angler's Pass", coins: null, price_tier_usd: 4.99, kind: 'subscription', entitlement: 'anglers_pass', trial_days: 7 },
+  {
+    product_id: 'coins_500',
+    display: 'Bait Tin',
+    coins: 500,
+    price_tier_usd: 0.99,
+    kind: 'consumable',
+    vc_associated: true,
+  },
+  {
+    product_id: 'coins_1600',
+    display: 'Tackle Box',
+    coins: 1600,
+    price_tier_usd: 2.99,
+    kind: 'consumable',
+    vc_associated: true,
+  },
+  {
+    product_id: 'coins_6000',
+    display: 'Trawler Haul',
+    coins: 6000,
+    price_tier_usd: 9.99,
+    kind: 'consumable',
+    vc_associated: true,
+  },
+  {
+    product_id: 'anglers_pass',
+    display: "Angler's Pass",
+    coins: null,
+    price_tier_usd: 4.99,
+    kind: 'subscription',
+    entitlement: 'anglers_pass',
+    trial_days: 7,
+  },
 ];
 
 export const RARITY_ORDER = ['common', 'uncommon', 'rare', 'legendary'];

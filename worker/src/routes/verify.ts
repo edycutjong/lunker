@@ -59,9 +59,10 @@ export async function verify(req: Request, deps: Deps): Promise<Response> {
     // Derived, not hardcoded: this page renders identically in local dev, and
     // claiming "production" there would be a small lie on the one surface whose
     // entire job is being checkable.
-    note: deps.env.DEV_CAST_ENABLED === '1'
-      ? 'Read-only, anonymized, live from the development ledger.'
-      : 'Read-only, anonymized, live from the production ledger.',
+    note:
+      deps.env.DEV_CAST_ENABLED === '1'
+        ? 'Read-only, anonymized, live from the development ledger.'
+        : 'Read-only, anonymized, live from the production ledger.',
   };
 
   if (url.searchParams.get('format') === 'json') return json(payload);
@@ -167,7 +168,8 @@ function renderVerify(p: Payload): string {
 }
 
 function esc(s: string): string {
-  return s.replace(/[&<>"']/g, (c) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!,
+  return s.replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!,
   );
 }

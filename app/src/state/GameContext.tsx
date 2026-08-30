@@ -9,19 +9,23 @@
  */
 
 import React, {
-  createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from 'react';
 import { AppState } from 'react-native';
 import type { CustomerInfo } from 'react-native-purchases';
 
-import { LAKES, getLake } from '../../../shared/content.js';
+import { LAKES, getLake, type Lake } from '../../../shared/content.js';
 import * as RC from '../lib/purchases';
 import * as OS from '../lib/onesignal';
 import * as api from '../lib/api';
 import { getOrCreateAppUserId } from '../lib/identity';
-import {
-  loadAlbum, saveAlbum, loadUnlockedLakes, saveUnlockedLakes,
-} from '../lib/storage';
+import { loadAlbum, saveAlbum, loadUnlockedLakes, saveUnlockedLakes } from '../lib/storage';
 
 export interface AlbumEntry {
   fish_id: string;
@@ -58,7 +62,7 @@ interface GameApi extends GameState {
 
 const Ctx = createContext<GameApi | null>(null);
 
-const FREE_LAKES = LAKES.filter((l: any) => l.unlock.type === 'free').map((l: any) => l.id);
+const FREE_LAKES = LAKES.filter((l: Lake) => l.unlock.type === 'free').map((l: Lake) => l.id);
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<GameState>({
@@ -160,9 +164,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   // Entitlements can change without us asking — a trial converting, a
   // subscription lapsing. Deep Sea has to lock itself in that case.
-  useEffect(() => RC.onCustomerInfoChanged((info) => {
-    setState((s) => ({ ...s, customerInfo: info, hasPass: RC.hasAnglersPass(info) }));
-  }), []);
+  useEffect(
+    () =>
+      RC.onCustomerInfoChanged((info) => {
+        setState((s) => ({ ...s, customerInfo: info, hasPass: RC.hasAnglersPass(info) }));
+      }),
+    [],
+  );
 
   // Re-read the balance whenever the app comes back to the foreground: a coin
   // pack bought on another device, or a server grant, changed it while we slept.
@@ -173,88 +181,91 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return () => sub.remove();
   }, [refreshBalance]);
 
-  const api_: GameApi = useMemo(() => ({
-    ...state,
+  const api_: GameApi = useMemo(
+    () => ({
+      ...state,
 
-    refreshBalance,
-    refreshCustomerInfo,
+      refreshBalance,
+      refreshCustomerInfo,
 
-    recordCatch(entry) {
-      setState((s) => {
-        const album = [entry, ...s.album];
-        void saveAlbum(album);
-        OS.syncTags({
-          current_lake: s.currentLake,
-          streak_days: s.streakDays,
-          unlocked_count: s.unlockedLakes.length,
-          rare_count: album.filter((a) => a.rarity === 'rare' || a.rarity === 'legendary').length,
-        });
-        return { ...s, album };
-      });
-    },
-
-    setCurrentLake(lakeId) {
-      if (!getLake(lakeId)) return;
-      setState((s) => {
-        if (s.appUserId) {
-          api.syncPlayer({
-            app_user_id: s.appUserId,
-            current_lake: lakeId,
-            unlocked_lakes: s.unlockedLakes,
-            push_enabled: s.pushEnabled,
-          });
-        }
-        return { ...s, currentLake: lakeId };
-      });
-    },
-
-    unlockLake(lakeId) {
-      setState((s) => {
-        if (s.unlockedLakes.includes(lakeId)) return s;
-        const unlockedLakes = [...s.unlockedLakes, lakeId];
-        void saveUnlockedLakes(unlockedLakes);
-        if (s.appUserId) {
-          api.syncPlayer({
-            app_user_id: s.appUserId,
-            current_lake: lakeId,
-            unlocked_lakes: unlockedLakes,
-            push_enabled: s.pushEnabled,
-          });
-        }
-        return { ...s, unlockedLakes, currentLake: lakeId };
-      });
-    },
-
-    markPushEnabled(enabled) {
-      setState((s) => ({ ...s, pushEnabled: enabled, pushDeclined: !enabled && primed.current }));
-    },
-
-    /**
-     * The prime, then the native prompt — in that order, once, after the first
-     * landed catch. Asking on cold start is how a push-premised game gets
-     * permanently muted before it has shown anyone why it deserves the slot.
-     */
-    async primeAndRequestPush() {
-      if (primed.current || OS.hasPushPermission()) return;
-      primed.current = true;
-
-      OS.triggerPermissionPrime();
-      const granted = await OS.requestPushPermission();
-      OS.clearPermissionPrime();
-
-      setState((s) => {
-        if (s.appUserId) {
-          api.syncPlayer({
-            app_user_id: s.appUserId,
+      recordCatch(entry) {
+        setState((s) => {
+          const album = [entry, ...s.album];
+          void saveAlbum(album);
+          OS.syncTags({
             current_lake: s.currentLake,
-            unlocked_lakes: s.unlockedLakes,
-            push_enabled: granted,
+            streak_days: s.streakDays,
+            unlocked_count: s.unlockedLakes.length,
+            rare_count: album.filter((a) => a.rarity === 'rare' || a.rarity === 'legendary').length,
           });
-        }
-        return { ...s, pushEnabled: granted, pushDeclined: !granted };
-      });
-    },
-  }), [state, refreshBalance, refreshCustomerInfo]);
+          return { ...s, album };
+        });
+      },
+
+      setCurrentLake(lakeId) {
+        if (!getLake(lakeId)) return;
+        setState((s) => {
+          if (s.appUserId) {
+            api.syncPlayer({
+              app_user_id: s.appUserId,
+              current_lake: lakeId,
+              unlocked_lakes: s.unlockedLakes,
+              push_enabled: s.pushEnabled,
+            });
+          }
+          return { ...s, currentLake: lakeId };
+        });
+      },
+
+      unlockLake(lakeId) {
+        setState((s) => {
+          if (s.unlockedLakes.includes(lakeId)) return s;
+          const unlockedLakes = [...s.unlockedLakes, lakeId];
+          void saveUnlockedLakes(unlockedLakes);
+          if (s.appUserId) {
+            api.syncPlayer({
+              app_user_id: s.appUserId,
+              current_lake: lakeId,
+              unlocked_lakes: unlockedLakes,
+              push_enabled: s.pushEnabled,
+            });
+          }
+          return { ...s, unlockedLakes, currentLake: lakeId };
+        });
+      },
+
+      markPushEnabled(enabled) {
+        setState((s) => ({ ...s, pushEnabled: enabled, pushDeclined: !enabled && primed.current }));
+      },
+
+      /**
+       * The prime, then the native prompt — in that order, once, after the first
+       * landed catch. Asking on cold start is how a push-premised game gets
+       * permanently muted before it has shown anyone why it deserves the slot.
+       */
+      async primeAndRequestPush() {
+        if (primed.current || OS.hasPushPermission()) return;
+        primed.current = true;
+
+        OS.triggerPermissionPrime();
+        const granted = await OS.requestPushPermission();
+        OS.clearPermissionPrime();
+
+        setState((s) => {
+          if (s.appUserId) {
+            api.syncPlayer({
+              app_user_id: s.appUserId,
+              current_lake: s.currentLake,
+              unlocked_lakes: s.unlockedLakes,
+              push_enabled: granted,
+            });
+          }
+          return { ...s, pushEnabled: granted, pushDeclined: !granted };
+        });
+      },
+    }),
+    [state, refreshBalance, refreshCustomerInfo],
+  );
 
   return <Ctx.Provider value={api_}>{children}</Ctx.Provider>;
 }

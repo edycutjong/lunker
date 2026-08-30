@@ -1,0 +1,29 @@
+# Generated, byte-compared artifacts.
+#
+# CI asserts that `npm run seed` and `npm run seed:anomalies` regenerate these
+# files byte-identically. A formatter that rewrote them would make the emitter
+# and the repo disagree forever, and the determinism gate would fail on a
+# whitespace change rather than on a real one. The emitter owns their bytes.
+seed/content/
+seed/telemetry-anomalies.json
+
+# Lockfiles are npm's output, not ours.
+package-lock.json
+worker/package-lock.json
+app/package-lock.json
+
+# Binary / generated assets.
+docs/assets/
+
+# Judge-facing prose. Prettier's Markdown printer pads table cells to the width
+# of the widest row (turning a readable table into 250-character lines) and
+# rewrites `*emphasis*` to `_emphasis_`. Both make the source of the documents a
+# judge actually reads worse, and neither catches a defect. Code is formatted;
+# prose is written.
+*.md
+
+node_modules/
+coverage/
+.wrangler/
+.expo/
+dist/

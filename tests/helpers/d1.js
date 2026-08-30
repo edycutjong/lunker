@@ -79,7 +79,10 @@ export class FakeD1 {
 
   /** Test-only escape hatch for asserting on state directly. */
   raw(sql, ...params) {
-    return this.db.prepare(sql).all(...params).map((r) => ({ ...r }));
+    return this.db
+      .prepare(sql)
+      .all(...params)
+      .map((r) => ({ ...r }));
   }
 }
 

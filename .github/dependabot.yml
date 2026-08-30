@@ -1,0 +1,71 @@
+version: 2
+
+# Three npm manifests, and Dependabot silently ignores the two it is not told
+# about. `worker/` is the component that holds every secret and `app/` is what
+# ships to a store, so leaving either unwatched would leave the alerts on the
+# part of the repo that matters least.
+#
+# Monthly, grouped, no majors. A major bump is a framework migration (`expo`
+# 53 -> 54 is an SDK migration, not maintenance) and it breaks CI on a frozen
+# submission. Security alerts are a separate mechanism and stay on regardless of
+# what this file says.
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    labels: ['dependencies']
+    groups:
+      tooling:
+        patterns: ['*']
+        update-types: ['minor', 'patch']
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+
+  - package-ecosystem: npm
+    directory: /worker
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    labels: ['dependencies', 'worker']
+    groups:
+      worker:
+        patterns: ['*']
+        update-types: ['minor', 'patch']
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+
+  - package-ecosystem: npm
+    directory: /app
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    labels: ['dependencies', 'app']
+    groups:
+      app:
+        patterns: ['*']
+        update-types: ['minor', 'patch']
+    ignore:
+      # Expo pins the whole React Native toolchain to the SDK. A minor bump of
+      # `react-native` or `expo` outside an SDK upgrade produces a build that
+      # does not run, so these move only when the SDK does — by hand.
+      - dependency-name: expo
+      - dependency-name: react-native
+      - dependency-name: react
+      - dependency-name: 'expo-*'
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    labels: ['ci']
+    groups:
+      actions:
+        patterns: ['*']

@@ -29,10 +29,10 @@ export const color = {
 } as const;
 
 export const rarityColor = {
-  common: color.textMid,     // deliberately dull; makes rare feel rare
+  common: color.textMid, // deliberately dull; makes rare feel rare
   uncommon: color.primary,
-  rare: color.accent,        // the koi-lantern amber — the hero catch sits here
-  legendary: '#C77DFF',      // the only colour outside the base palette
+  rare: color.accent, // the koi-lantern amber — the hero catch sits here
+  legendary: '#C77DFF', // the only colour outside the base palette
 } as const;
 
 export type Rarity = keyof typeof rarityColor;

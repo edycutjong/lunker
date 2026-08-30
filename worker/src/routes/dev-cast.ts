@@ -43,6 +43,7 @@ export async function devCast(req: Request, deps: Deps): Promise<Response> {
   const record = await dispatchBite(deps, body.app_user_id, lakeId);
   return json({
     ...record,
-    disclosure: 'Bite TIMING triggered manually for recording. The catch is a live server-side roll.',
+    disclosure:
+      'Bite TIMING triggered manually for recording. The catch is a live server-side roll.',
   });
 }

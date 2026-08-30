@@ -8,15 +8,13 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, type ViewStyle } from 'react-native';
-import Svg, { Circle, Path, G } from 'react-native-svg';
+import Svg, { Circle, G } from 'react-native-svg';
 
 import { color, rarityColor, radius, space, font, type Rarity } from '../theme/tokens';
 
 // ---------------------------------------------------------------------------
 
-export function GlassPanel({
-  children, style,
-}: { children: React.ReactNode; style?: ViewStyle }) {
+export function GlassPanel({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
   return <View style={[styles.glass, style]}>{children}</View>;
 }
 
@@ -30,8 +28,14 @@ export function GlassPanel({
  * legible to a judge who never opens the code.
  */
 export function CoinBalance({
-  balance, settled = false, compact = false,
-}: { balance: number | null; settled?: boolean; compact?: boolean }) {
+  balance,
+  settled = false,
+  compact = false,
+}: {
+  balance: number | null;
+  settled?: boolean;
+  compact?: boolean;
+}) {
   return (
     <View style={styles.coinRow}>
       <View style={styles.coinDot} />
@@ -57,8 +61,14 @@ export function CoinBalance({
  * this screen.
  */
 export function CountdownRing({
-  remaining, total, size = 96,
-}: { remaining: number; total: number; size?: number }) {
+  remaining,
+  total,
+  size = 96,
+}: {
+  remaining: number;
+  total: number;
+  size?: number;
+}) {
   const r = size / 2 - 6;
   const circumference = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(1, remaining / total));
@@ -71,11 +81,22 @@ export function CountdownRing({
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
       <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
         <G rotation={-90} origin={`${size / 2}, ${size / 2}`}>
-          <Circle cx={size / 2} cy={size / 2} r={r} stroke={color.line} strokeWidth={4} fill="none" />
           <Circle
-            cx={size / 2} cy={size / 2} r={r}
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            stroke={color.line}
+            strokeWidth={4}
+            fill="none"
+          />
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
             stroke={urgent ? color.accent : color.primary}
-            strokeWidth={4} fill="none" strokeLinecap="round"
+            strokeWidth={4}
+            fill="none"
+            strokeLinecap="round"
             strokeDasharray={`${circumference}`}
             strokeDashoffset={circumference * (1 - pct)}
           />
@@ -95,10 +116,21 @@ export function CountdownRing({
  * is readable as a still frame.
  */
 export function TensionArc({
-  pos, zoneCenter, zoneHalfWidth, inZone, progress, required, height = 320,
+  pos,
+  zoneCenter,
+  zoneHalfWidth,
+  inZone,
+  progress,
+  required,
+  height = 320,
 }: {
-  pos: number; zoneCenter: number; zoneHalfWidth: number;
-  inZone: boolean; progress: number; required: number; height?: number;
+  pos: number;
+  zoneCenter: number;
+  zoneHalfWidth: number;
+  inZone: boolean;
+  progress: number;
+  required: number;
+  height?: number;
 }) {
   const width = 74;
   const toY = (p: number) => height - p * height; // 0 at the bottom
@@ -112,7 +144,12 @@ export function TensionArc({
       <View
         style={[
           styles.zone,
-          { top: zoneTop, height: zoneHeight, backgroundColor: inZone ? 'rgba(63,219,182,0.30)' : 'rgba(63,219,182,0.14)', borderColor: color.primary },
+          {
+            top: zoneTop,
+            height: zoneHeight,
+            backgroundColor: inZone ? 'rgba(63,219,182,0.30)' : 'rgba(63,219,182,0.14)',
+            borderColor: color.primary,
+          },
         ]}
       />
       <View
@@ -141,15 +178,27 @@ export function TensionArc({
  * colour, not a colour alone.
  */
 export function CatchCard({
-  name, rarity, massKg, coins, scale = 1,
-}: { name: string; rarity: Rarity; massKg: number; coins?: number; scale?: number }) {
+  name,
+  rarity,
+  massKg,
+  coins,
+  scale = 1,
+}: {
+  name: string;
+  rarity: Rarity;
+  massKg: number;
+  coins?: number;
+  scale?: number;
+}) {
   const tint = rarityColor[rarity];
   return (
     <GlassPanel style={{ borderColor: tint, padding: space.md * scale, alignItems: 'center' }}>
       <Text style={[styles.rarityWord, { color: tint, fontSize: 13 * scale }]}>
         {rarity.toUpperCase()}
       </Text>
-      <Text style={[styles.fishName, { fontSize: 26 * scale }]} numberOfLines={2}>{name}</Text>
+      <Text style={[styles.fishName, { fontSize: 26 * scale }]} numberOfLines={2}>
+        {name}
+      </Text>
       <Text style={[styles.mass, { fontSize: 15 * scale }]}>{massKg.toFixed(1)} kg</Text>
       {coins != null && (
         <Text style={[styles.coinGrant, { fontSize: 16 * scale }]}>+{coins} COIN</Text>
@@ -180,9 +229,17 @@ export type LakeLock =
  * currency gate in a still frame.
  */
 export function LakeCard({
-  name, topRarity, lock, selected, onPress,
+  name,
+  topRarity,
+  lock,
+  selected,
+  onPress,
 }: {
-  name: string; topRarity: Rarity; lock: LakeLock; selected: boolean; onPress: () => void;
+  name: string;
+  topRarity: Rarity;
+  lock: LakeLock;
+  selected: boolean;
+  onPress: () => void;
 }) {
   const locked = lock.type !== 'open';
   const affordable = lock.type === 'coin' && lock.balance != null && lock.balance >= lock.cost;
@@ -200,9 +257,7 @@ export function LakeCard({
     >
       <View style={{ flex: 1 }}>
         <Text style={[styles.lakeName, locked && { color: color.textMid }]}>{name}</Text>
-        <Text style={[styles.lakeSub, { color: rarityColor[topRarity] }]}>
-          up to {topRarity}
-        </Text>
+        <Text style={[styles.lakeSub, { color: rarityColor[topRarity] }]}>up to {topRarity}</Text>
       </View>
 
       {lock.type === 'entitlement' && (
@@ -231,8 +286,16 @@ export function LakeCard({
 // ---------------------------------------------------------------------------
 
 export function PrimaryButton({
-  label, onPress, tone = 'primary', disabled,
-}: { label: string; onPress: () => void; tone?: 'primary' | 'ghost'; disabled?: boolean }) {
+  label,
+  onPress,
+  tone = 'primary',
+  disabled,
+}: {
+  label: string;
+  onPress: () => void;
+  tone?: 'primary' | 'ghost';
+  disabled?: boolean;
+}) {
   return (
     <Pressable
       onPress={onPress}
@@ -268,19 +331,35 @@ const styles = StyleSheet.create({
   countdown: { ...font.numeric, color: color.textHi, fontSize: 24 },
 
   track: {
-    position: 'absolute', top: 0, bottom: 0, width: 10,
-    borderRadius: radius.pill, backgroundColor: 'rgba(240,250,246,0.07)',
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 10,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(240,250,246,0.07)',
   },
   zone: {
-    position: 'absolute', width: 34, borderRadius: radius.sm, borderWidth: 1,
+    position: 'absolute',
+    width: 34,
+    borderRadius: radius.sm,
+    borderWidth: 1,
   },
   needle: {
-    position: 'absolute', width: 52, height: 6, borderRadius: 3,
+    position: 'absolute',
+    width: 52,
+    height: 6,
+    borderRadius: 3,
   },
   progressTrack: {
-    position: 'absolute', right: 0, top: 0, bottom: 0, width: 5,
-    borderRadius: radius.pill, backgroundColor: 'rgba(240,250,246,0.07)',
-    justifyContent: 'flex-end', overflow: 'hidden',
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 5,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(240,250,246,0.07)',
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
   },
   progressFill: { width: 5, backgroundColor: color.primary, borderRadius: radius.pill },
 
@@ -290,15 +369,25 @@ const styles = StyleSheet.create({
   coinGrant: { ...font.numeric, color: color.primary, marginTop: space.sm },
 
   emptySlot: {
-    flex: 1, aspectRatio: 0.78, borderRadius: radius.md, borderWidth: 1,
-    borderColor: color.line, alignItems: 'center', justifyContent: 'center',
+    flex: 1,
+    aspectRatio: 0.78,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: color.line,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   lockGlyph: { fontSize: 18, opacity: 0.5 },
 
   lakeCard: {
-    flexDirection: 'row', alignItems: 'center', gap: space.md,
-    padding: space.md, borderRadius: radius.lg, borderWidth: 1,
-    borderColor: color.line, backgroundColor: color.bgElevated,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    padding: space.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: color.line,
+    backgroundColor: color.bgElevated,
   },
   lakeName: { ...font.display, color: color.textHi, fontSize: 19 },
   lakeSub: { fontSize: font.minSize, marginTop: 2, textTransform: 'capitalize' },
@@ -308,8 +397,11 @@ const styles = StyleSheet.create({
   selectedTick: { color: color.primary, fontSize: 12 },
 
   btn: {
-    paddingVertical: 14, paddingHorizontal: space.lg, borderRadius: radius.md,
-    alignItems: 'center', borderWidth: 1,
+    paddingVertical: 14,
+    paddingHorizontal: space.lg,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    borderWidth: 1,
   },
   btnPrimary: { backgroundColor: color.primary, borderColor: color.primary },
   btnGhost: { backgroundColor: color.bgElevated, borderColor: color.line },

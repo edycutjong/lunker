@@ -25,9 +25,7 @@ export async function hmacSha256Hex(raw: string, secret: string): Promise<string
     ['sign'],
   );
   const sig = await crypto.subtle.sign('HMAC', key, enc.encode(raw));
-  return [...new Uint8Array(sig)]
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
+  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 /**
@@ -56,7 +54,10 @@ export async function verifySignature(
   secret: string,
 ): Promise<boolean> {
   if (!headerValue || !secret) return false;
-  const provided = headerValue.trim().replace(/^sha256=/i, '').toLowerCase();
+  const provided = headerValue
+    .trim()
+    .replace(/^sha256=/i, '')
+    .toLowerCase();
   const expected = await hmacSha256Hex(rawBody, secret);
   return timingSafeEqual(provided, expected);
 }

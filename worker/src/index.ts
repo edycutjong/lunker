@@ -29,12 +29,18 @@ export default {
     try {
       if (req.method === 'POST') {
         switch (path) {
-          case '/catch-resolved':      return await catchResolved(req, deps);
-          case '/spend-coin':          return await spendCoin(req, deps);
-          case '/bite-opened':         return await biteOpened(req, deps);
-          case '/webhooks/revenuecat': return await revenuecatWebhook(req, deps);
-          case '/player/sync':         return await playerSync(req, deps);
-          case '/dev/cast':            return await devCast(req, deps);
+          case '/catch-resolved':
+            return await catchResolved(req, deps);
+          case '/spend-coin':
+            return await spendCoin(req, deps);
+          case '/bite-opened':
+            return await biteOpened(req, deps);
+          case '/webhooks/revenuecat':
+            return await revenuecatWebhook(req, deps);
+          case '/player/sync':
+            return await playerSync(req, deps);
+          case '/dev/cast':
+            return await devCast(req, deps);
         }
       }
 
@@ -59,7 +65,13 @@ export default {
    * Journeys own re-engagement messaging (tide reminder, milestone, win-back).
    * This handler owns only the bite itself, because the bite has to write
    * `sent.roll_seed` to D1 before the push leaves and a Journey cannot do that.
+   *
+   * There is deliberately no `await` here. Awaiting `runDispatch` would hold the
+   * cron invocation open for the whole fan-out; `ctx.waitUntil` is the Workers
+   * contract for "keep the isolate alive until this settles" and is what lets a
+   * slow OneSignal round-trip finish without the scheduled handler timing out.
    */
+  // eslint-disable-next-line require-await -- see above: waitUntil, not await.
   async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     const deps: Deps = { db: env.DB, env, now: () => Date.now() };
     ctx.waitUntil(runDispatch(deps));

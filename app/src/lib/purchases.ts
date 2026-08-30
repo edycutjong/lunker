@@ -55,9 +55,13 @@ export async function buyPackage(pkg: PurchasesPackage): Promise<CustomerInfo | 
   try {
     const { customerInfo } = await Purchases.purchasePackage(pkg);
     return customerInfo;
-  } catch (e: any) {
+  } catch (e: unknown) {
     // A user cancelling is a normal outcome, not an error to surface as one.
-    if (e?.userCancelled) return null;
+    // `userCancelled` is a RevenueCat-specific field on the thrown error, not
+    // part of `Error`, so it is probed structurally.
+    if (typeof e === 'object' && e !== null && 'userCancelled' in e && e.userCancelled) {
+      return null;
+    }
     throw e;
   }
 }

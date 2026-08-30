@@ -74,7 +74,7 @@ async function main() {
   await write('index.json', {
     seed: SEED,
     lakes: LAKES.map((l) => ({ id: l.id, name: l.name, unlock: l.unlock })),
-    note: 'Prices are intended tiers for diffing against the RevenueCat dashboard. The app renders the store\'s own localized priceString and never these literals.',
+    note: "Prices are intended tiers for diffing against the RevenueCat dashboard. The app renders the store's own localized priceString and never these literals.",
   });
 
   console.log('done');
