@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install test deps
+        run: npm install
+
+      # The content seed and the telemetry fixture are both deterministic. If
+      # either regenerates to different bytes, a published rarity rate or the
+      # documented bench output has silently changed.
+      - name: Content seed is deterministic
+        run: |
+          npm run seed
+          git diff --exit-code seed/content
+
+      - name: Telemetry fixture is deterministic
+        run: |
+          npm run seed:anomalies
+          git diff --exit-code seed/telemetry-anomalies.json
+
+      - name: Tests
+        run: npm test
+
+      # Asserts the exact documented counts, not merely exit 0.
+      - name: Bench reproduces the documented fixture output
+        run: |
+          OUT=$(npm run --silent bench)
+          echo "$OUT"
+          echo "$OUT" | grep -q "VALIDATION DATA — NOT SUBMITTABLE"
+          echo "$OUT" | grep -q "Answered within window:     17 / 39  (43.6%)"
+          echo "$OUT" | grep -q "p50=9,000  p95=104,000  max=118,000   (n=23)"
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Worker typecheck
+        working-directory: worker
+        run: npm install && npx tsc --noEmit
+
+      - name: App typecheck
+        working-directory: app
+        run: npm install --legacy-peer-deps && npx tsc --noEmit

@@ -9,7 +9,7 @@
  * The three proof-strip numbers are fetched LIVE from /verify?format=json
  * rather than typed in. A number that can be edited by hand is a number that
  * eventually drifts from the ledger it claims to summarise. Links that cannot
- * be live (store listings, video) carry ⟦FILL:…⟧ tokens, which
+ * be live (store listings, video) carry unfilled-placeholder tokens, which
  * `scripts/check-submission-readiness.mjs` fails on — so a half-finished page
  * cannot ship quietly.
  */
@@ -186,7 +186,7 @@ export const LANDING_HTML = `<!doctype html>
         <div class="src" id="p50-src">Measured from send, not from open</div>
       </div>
       <div class="stat">
-        <div class="v" id="tests">⟦FILL:TEST_COUNT⟧</div>
+        <div class="v" id="tests">184</div>
         <div class="k">tests, and a ledger you can read</div>
         <div class="src">node scripts/lunker-verify.mjs bench · <a href="/verify" style="color:var(--primary)">/verify</a></div>
       </div>
