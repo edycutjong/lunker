@@ -1,4 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320" role="img" aria-label="Lunker — a cozy fishing game where fish bite while the app is closed. Animated banner: a bite push arrives, the 60-second reel window counts down, the needle holds the green zone, a rare Moonlight Koi is landed, and COIN settles server-side via RevenueCat Virtual Currency.">
+<!-- STORYBOARD (dur 8s — this file's single master dur)
+  0-10%   steady state: plate, mark, outlined Lunker wordmark, tagline, metric line.
+                        Poster-safe: at t=0 the whole brand layer is visible.
+  10-25%  trigger:      the bite push card pops in on the right, badge blinking.  data-story="beat-2"
+  25-55%  mechanism:    The rod twitches at Willow Lake: the lure's teal calm becomes an amber 60-second window.
+                        The 60s ring counts down and the needle holds the zone.   data-story="beat-3"
+  55-80%  resolution:   LANDED seals, the Moonlight Koi card mints, +120 COIN
+                        settles server-side with its RC tick.                     data-story="beat-4"
+  80-100% breathe, then the story layer fades 96-100% so the loop never hard-cuts.
+-->
+
   <defs>
     <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#0A2A34"/>
@@ -122,8 +133,8 @@
   <text class="f-mono metric-pulse" x="48" y="236" font-size="13" fill="#FFA05A">&#9656; 60s bite window &#183; reel-tension &#183; server-settled COIN</text>
 
   <!-- tech-stack line (mono, faint) -->
-  <text class="f-mono" x="48" y="263" font-size="11.5" fill="#5E7B75">React Native &#183; Expo &#183; RevenueCat VC &#183; OneSignal Journeys</text>
-  <text class="f-mono" x="48" y="289" font-size="10" fill="#537B72">REVENUECAT SHIPATON 2026 &#183; GOOGLE PLAY</text>
+  <text class="f-mono" x="48" y="263" font-size="11.5" fill="#94B3AC">React Native &#183; Expo &#183; RevenueCat VC &#183; OneSignal Push</text>
+  <text class="f-mono" x="48" y="289" font-size="10" fill="#94B3AC">REVENUECAT SHIPATON 2026 &#183; ANDROID</text>
 
   <!-- ================= right: product story (x 560..1240) ================= -->
   <g>
@@ -144,7 +155,7 @@
     <g class="pop pop-push">
       <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.06;0.09;1" dur="8s" repeatCount="indefinite"/>
       <rect x="570" y="44" width="180" height="64" rx="12" fill="rgba(4,23,30,0.78)" stroke="rgba(255,160,90,0.45)"/>
-      <text class="f-mono" x="584" y="62" font-size="9" letter-spacing="1.5" fill="#6E8D86">BITE ALERT &#183; now</text>
+      <text class="f-mono" x="584" y="62" font-size="9" letter-spacing="1.5" fill="#94B3AC">BITE ALERT &#183; now</text>
       <text class="f-sans" x="584" y="80" font-size="13" font-weight="600" fill="#F0FAF6">Rod is twitching!</text>
       <text class="f-mono" x="584" y="97" font-size="10" fill="#FFA05A">Willow Lake &#183; 60s left</text>
       <circle cx="736" cy="58" r="5" fill="#FFA05A">
@@ -208,7 +219,7 @@
       <circle cx="1052" cy="232" r="11" fill="#FFA05A"/>
       <circle cx="1052" cy="232" r="6.5" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="2"/>
       <text class="f-mono" x="1070" y="237" font-size="13" font-weight="600" fill="#3FDBB6">+120 COIN</text>
-      <text class="f-mono" x="1044" y="256" font-size="9.5" fill="#5E7B75">
+      <text class="f-mono" x="1044" y="256" font-size="9.5" fill="#94B3AC">
         <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.78;0.83;1" dur="8s" repeatCount="indefinite"/>
         server-settled &#183; RC VC
       </text>

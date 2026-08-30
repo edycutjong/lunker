@@ -1,4 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Lunker animated icon — a fishing hook draws itself into a midnight lake, ripples settle, then the bite: the amber notification dot pops, the hook twitches, ripples burst, and the lure glow breathes">
+<!-- STORYBOARD (dur 6s — this file's single master dur)
+  0-10%   steady state: midnight-lake plate, hook fully drawn, line off the top-left,
+                        amber badge dark. Poster-safe: the brand reads at t=0.
+  10-25%  trigger:      the hook draws itself in along its centreline mask and the
+                        line sweeps in from the empty top-left quadrant.  data-story="beat-2"
+  25-55%  mechanism:    The rod twitches at Willow Lake: the lure's teal calm becomes an amber 60-second window.   data-story="beat-3"
+  55-80%  resolution:   the badge stays lit and the ripples hold — the window is open
+                        and it is still open.                            data-story="beat-4"
+  80-100% glow breath on the lure, then the seam fade back to steady state.
+-->
+
   <defs>
     <linearGradient id="plate" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#0B2F39"/>
