@@ -80,7 +80,7 @@ export class RevenueCatClient {
  *
  * Deliberately lenient: v2 is forward-compatible and may add fields without a
  * version bump, so a shape we do not recognise degrades to `null` (the HUD
- * falls back to a fresh `virtualCurrencies()` read on the client) rather than
+ * falls back to a fresh `getVirtualCurrencies()` read on the client) rather than
  * throwing and failing a transaction that actually succeeded.
  */
 export function readBalance(raw: unknown): number | null {
