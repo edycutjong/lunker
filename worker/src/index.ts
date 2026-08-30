@@ -15,7 +15,7 @@ import { revenuecatWebhook } from './routes/revenuecat-webhook.js';
 import { verify } from './routes/verify.js';
 import { playerSync } from './routes/player-sync.js';
 import { devCast } from './routes/dev-cast.js';
-import { dispatchBite, isDue, type Player } from './lib/bite.js';
+import { dispatchBite, isDue, bitesSentToday, dailyCapFor, type Player } from './lib/bite.js';
 import { LANDING_HTML } from './landing.js';
 
 export default {
@@ -83,6 +83,12 @@ export async function runDispatch(deps: Deps): Promise<number> {
   for (const player of results ?? []) {
     if (!isDue(player, now)) continue;
     try {
+      // The per-lake daily cap. Without this the one-hour gap alone would allow
+      // ~11 bites a day at Willow, against a content table that has always
+      // declared 3-5 — and against what we tell players.
+      const cap = dailyCapFor(player.current_lake);
+      if (cap > 0 && (await bitesSentToday(deps, player, now)) >= cap) continue;
+
       await dispatchBite(deps, player.app_user_id, player.current_lake);
       sent += 1;
     } catch (err) {

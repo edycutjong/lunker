@@ -35,9 +35,13 @@ export interface BiteRecord {
 export function isWithinCadence(lakeId: string, localHour: number): boolean {
   const lake = getLake(lakeId);
   if (!lake) return false;
-  if (localHour < 8 || localHour >= 23) return false; // never while asleep, any lake
+  // Never while asleep, whatever the lake. This gate is absolute and it is why
+  // the night window below stops at 23:00 rather than running to 02:00 — a
+  // 1am push for a fishing game is how "worth the interruption" loses the
+  // argument in a single night.
+  if (localHour < 8 || localHour >= 23) return false;
   if (lake.cadence_weighting === 'day') return localHour >= 8 && localHour < 19;
-  if (lake.cadence_weighting === 'night') return localHour >= 18 || localHour < 2;
+  if (lake.cadence_weighting === 'night') return localHour >= 18;
   return true;
 }
 
@@ -63,6 +67,38 @@ export function isDue(player: Player, nowMs: number): boolean {
   if (!player.push_enabled) return false;
   if (player.last_bite_at != null && nowMs - player.last_bite_at < MIN_BITE_GAP_MS) return false;
   return isWithinCadence(player.current_lake, localHourFor(player, nowMs));
+}
+
+/**
+ * The per-lake daily cap ("3-5 bites a day at Willow").
+ *
+ * `isDue` alone only enforces a one-hour gap, which across a 15-hour waking
+ * window would allow up to 11 bites a day at Willow and 15 at an even-cadence
+ * lake. The content tables have always declared a cap; nothing read it until
+ * now, which made "I capped it at three to five bites a day" a claim the code
+ * contradicted.
+ *
+ * Counted over the player's LOCAL day, for the same reason streaks are.
+ */
+export function dailyCapFor(lakeId: string): number {
+  return getLake(lakeId)?.bites_per_day[1] ?? 0;
+}
+
+export async function bitesSentToday(
+  deps: Deps,
+  player: Pick<Player, 'app_user_id' | 'tz_offset_min'>,
+  nowMs: number,
+): Promise<number> {
+  const dayStartLocal =
+    Math.floor((nowMs + player.tz_offset_min * 60_000) / 86_400_000) * 86_400_000;
+  const dayStartUtc = dayStartLocal - player.tz_offset_min * 60_000;
+
+  const row = await deps.db
+    .prepare('SELECT COUNT(*) AS n FROM sent WHERE app_user_id = ? AND sent_at >= ?')
+    .bind(player.app_user_id, dayStartUtc)
+    .first<{ n: number }>();
+
+  return row?.n ?? 0;
 }
 
 /**

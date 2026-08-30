@@ -411,3 +411,39 @@ describe('POST /dev/cast', () => {
     expect(body.disclosure).toContain('live server-side roll');
   });
 });
+
+describe('POST /catch-resolved — the claim window', () => {
+  it('refuses to pay for a bite claimed long after it was sent', async () => {
+    // Without a ceiling, a modified client can sit on any notification id it
+    // ever received and cash it in hours later.
+    await seedBite(deps.db, { sentAt: NOW - 60 * 60 * 1000 });
+    const res = await catchResolved(
+      postJson('/catch-resolved', { app_user_id: USER, lake_id: 'willow', notification_id: NID, outcome: 'win' }),
+      deps,
+    );
+    expect(res.status).toBe(410);
+    expect((await res.json()).reason).toBe('expired');
+    expect(calls.filter((c) => c.url.includes('revenuecat'))).toHaveLength(0);
+  });
+
+  it('still records the expired bite as escaped, keeping it in the denominator', async () => {
+    await seedBite(deps.db, { sentAt: NOW - 60 * 60 * 1000 });
+    await catchResolved(
+      postJson('/catch-resolved', { app_user_id: USER, lake_id: 'willow', notification_id: NID, outcome: 'win' }),
+      deps,
+    );
+    const [row] = deps.db.raw('SELECT resolved FROM bite_telemetry WHERE notification_id = ?', NID);
+    expect(row.resolved).toBe('escaped');
+  });
+
+  it('allows a claim inside the delivery-latency grace window', async () => {
+    // A push that arrived 90s late must not rob a player of a fish they landed.
+    await seedBite(deps.db, { sentAt: NOW - 150_000 });
+    const res = await catchResolved(
+      postJson('/catch-resolved', { app_user_id: USER, lake_id: 'willow', notification_id: NID, outcome: 'win' }),
+      deps,
+    );
+    expect(res.status).toBe(200);
+    expect((await res.json()).outcome).toBe('landed');
+  });
+});

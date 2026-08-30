@@ -16,6 +16,19 @@ import { OneSignalClient } from '../lib/onesignal.js';
 import type { Deps } from '../types.js';
 import { json, badRequest } from '../lib/http.js';
 
+/**
+ * How long after SEND a bite can still be claimed.
+ *
+ * Not 60 seconds: the push's own 60s window runs from send, but Android
+ * delivery latency is real and is exactly what the killer number measures, so a
+ * player whose push arrived 40 seconds late would be robbed of a fish they
+ * legitimately landed. Not unbounded either — without a ceiling, a modified
+ * client can sit on any notification id it ever received and cash it in hours
+ * later. Fifteen minutes covers the worst Doze delivery we can plausibly see
+ * plus a full minigame, and closes the replay window.
+ */
+const MAX_CLAIM_MS = 15 * 60 * 1000;
+
 interface Body {
   app_user_id?: string;
   lake_id?: string;
@@ -43,14 +56,24 @@ export async function catchResolved(req: Request, deps: Deps): Promise<Response>
   // telemetry route enforces: an id we have no record of sending cannot have
   // been answered, and it certainly cannot be paid out.
   const sent = await db
-    .prepare('SELECT notification_id, app_user_id, lake_id, roll_seed FROM sent WHERE notification_id = ?')
+    .prepare('SELECT notification_id, app_user_id, lake_id, roll_seed, sent_at FROM sent WHERE notification_id = ?')
     .bind(notification_id)
-    .first<{ app_user_id: string; lake_id: string; roll_seed: string }>();
+    .first<{ app_user_id: string; lake_id: string; roll_seed: string; sent_at: number }>();
 
   if (!sent) return json({ error: 'unknown notification_id' }, 404);
   if (sent.app_user_id !== app_user_id) {
     // Answering someone else's bite. Never a real client.
     return json({ error: 'notification does not belong to this player' }, 403);
+  }
+
+  if (now() - sent.sent_at > MAX_CLAIM_MS) {
+    // The fish is long gone. Record the escape so the bite still counts in the
+    // denominator, then refuse to pay for it.
+    await db
+      .prepare("UPDATE bite_telemetry SET resolved = COALESCE(resolved, 'escaped') WHERE notification_id = ?")
+      .bind(notification_id)
+      .run();
+    return json({ outcome: 'escaped', catch: null, balance: null, reason: 'expired' }, 410);
   }
 
   await db

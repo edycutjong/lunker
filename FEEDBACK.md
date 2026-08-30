@@ -7,6 +7,13 @@ feedback is always vaguer and always kinder than the real thing.
 **Send-by date: 2026-09-20.** Prepared-but-unfired feedback has cost us before;
 the fix is a date at creation time, not better intentions.
 
+**Scope of this document, stated up front:** everything below comes from
+*integrating the SDKs in code* — reading the docs, pinning versions, and getting
+the client and server paths working. The OneSignal app, its Journeys, and the
+RevenueCat→OneSignal integration are dashboard configuration that is **not yet
+enabled**, so nothing here reports operational experience with them. Where a
+point is about the docs rather than a running system, it says so.
+
 ---
 
 ## RevenueCat
@@ -62,12 +69,16 @@ quickstart, at the exact point where the reader is about to call
 
 ### 5. Custom events vs tags for Journey entry is genuinely confusing in RN
 
+*(Docs feedback — our Journeys are not live yet, so this is about what the
+documentation led us to build, not about how it behaved in production.)*
+
 The RN SDK surfaces tags cleanly (`User.addTags`) but the custom-events path
-moved between versions, and the docs' examples are REST-first. We ended up
-driving Journeys from tags on the client and firing custom events from our
-backend, which works well — but we arrived there by trial rather than by
-reading. A short "client SDK vs REST: which one for Journey entry?" table would
-resolve it.
+moved between versions, and the docs' examples are REST-first. We settled on
+setting tags from the client and firing entry events from our backend — the
+backend is the only party that knows what was actually caught or actually paid
+for — but we arrived there by trial rather than by reading. A short "client SDK
+vs REST: which one for Journey entry?" table would have resolved it in a
+minute.
 
 ### 6. `collapse_id` + `ttl` for expiring notifications deserves a named pattern
 
@@ -83,9 +94,14 @@ or a live event needs exactly this.
 
 ### 7. The RevenueCat → OneSignal integration is the best thing neither doc leads with
 
+*(Discoverability feedback. We designed the win-back Journey around this and it
+is why our schema stores `EXPIRATION` events — but the integration is dashboard
+config we have not switched on yet, so we cannot report on it running.)*
+
 Forwarding `trial_started` / `expiration` and `entitlement_ids` onto the
-OneSignal user is what let our win-back Journey branch on real subscription
-state instead of guessing. It is the single highest-leverage integration in this
-build, and we found it late, in an integrations index rather than in either
-product's Journey/re-engagement guide. Both sides would benefit from linking to
-it from the place people actually plan re-engagement.
+OneSignal user is the difference between a win-back Journey that branches on
+real subscription state and one that guesses. It looks like the highest-leverage
+integration available to an app that uses both products — and we found it late,
+in an integrations index, rather than in either product's Journey or
+re-engagement guide. Both sides would benefit from linking to it from the place
+people actually plan re-engagement.

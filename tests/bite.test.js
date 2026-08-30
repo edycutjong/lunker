@@ -11,6 +11,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { FakeD1, makeDeps } from './helpers/d1.js';
 import {
   dispatchBite, isDue, isWithinCadence, localHourFor, MIN_BITE_GAP_MS,
+  dailyCapFor, bitesSentToday,
 } from '../worker/src/lib/bite.js';
 import { runDispatch } from '../worker/src/index.js';
 
@@ -207,5 +208,67 @@ describe('runDispatch', () => {
     deps.db.raw("UPDATE players SET current_lake = 'atlantis' WHERE app_user_id = 'broken'");
     addPlayer(deps.db, { app_user_id: 'fine', current_lake: 'reeds' });
     await expect(runDispatch(deps)).resolves.toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('daily bite cap', () => {
+  it('reports the per-lake maximum from the content table', () => {
+    expect(dailyCapFor('willow')).toBe(5);
+    expect(dailyCapFor('reeds')).toBe(4);
+    expect(dailyCapFor('quarry')).toBe(3);
+    expect(dailyCapFor('deepsea')).toBe(2);
+    expect(dailyCapFor('atlantis')).toBe(0);
+  });
+
+  it('counts only bites sent inside the player own local day', async () => {
+    addPlayer(deps.db);
+    const seed = async (nid, sentAt) => {
+      await deps.db
+        .prepare('INSERT INTO sent VALUES (?,?,?,?,?)')
+        .bind(nid, USER, 'willow', 'seed', sentAt)
+        .run();
+    };
+    const dayStart = Math.floor(NOW / 86_400_000) * 86_400_000;
+    await seed('today-1', dayStart + 3_600_000);
+    await seed('today-2', dayStart + 7_200_000);
+    await seed('yesterday', dayStart - 3_600_000);
+
+    const n = await bitesSentToday(deps, { app_user_id: USER, tz_offset_min: 0 }, NOW);
+    expect(n).toBe(2);
+  });
+
+  it('stops dispatching once the lake daily cap is reached', async () => {
+    // Without this cap the one-hour gap alone would allow ~11 bites a day at
+    // Willow, against a content table that has always declared 3-5.
+    const noon = NOW - new Date(NOW).getUTCHours() * 3_600_000 + 12 * 3_600_000;
+    const d = makeDeps({ db: new FakeD1(), now: () => noon });
+    addPlayer(d.db, { current_lake: 'quarry' });
+
+    const dayStart = Math.floor(noon / 86_400_000) * 86_400_000;
+    for (let i = 0; i < 3; i++) {
+      await d.db
+        .prepare('INSERT INTO sent VALUES (?,?,?,?,?)')
+        .bind(`cap-${i}`, USER, 'quarry', 'seed', dayStart + i * 3_600_000)
+        .run();
+    }
+
+    expect(await runDispatch(d)).toBe(0);
+  });
+
+  it('still dispatches when the player is under the cap', async () => {
+    const noon = NOW - new Date(NOW).getUTCHours() * 3_600_000 + 12 * 3_600_000;
+    const d = makeDeps({ db: new FakeD1(), now: () => noon });
+    addPlayer(d.db, { current_lake: 'reeds' });
+    expect(await runDispatch(d)).toBe(1);
+  });
+});
+
+describe('cadence windows — no unreachable branches', () => {
+  it('never schedules Deep Sea after the absolute sleep gate', () => {
+    // The `|| localHour < 2` branch used to be dead behind the >= 23 gate.
+    // Deep Sea's real window is 18:00-22:59 and the docs must say so.
+    expect(isWithinCadence('deepsea', 23)).toBe(false);
+    expect(isWithinCadence('deepsea', 1)).toBe(false);
+    expect(isWithinCadence('deepsea', 22)).toBe(true);
   });
 });

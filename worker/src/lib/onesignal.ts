@@ -79,8 +79,10 @@ export class OneSignalClient {
   }
 
   /**
-   * Fire a custom event that a Journey enters on (`first_rare`,
-   * `album_row_complete`, `streak_advanced`, `lake_unlocked`).
+   * Fire a custom event that a Journey enters on.
+   *
+   * Exactly two are fired, both from routes: `rare_landed`
+   * (routes/catch-resolved.ts) and `lake_unlocked` (routes/spend-coin.ts).
    */
   async trackEvent(
     externalId: string,

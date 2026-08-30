@@ -39,7 +39,8 @@ const PLACEHOLDERS = [
 
 async function* walk(dir) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
-    if (entry.name.startsWith('.') && entry.name !== '.gitignore') continue;
+    // `.github/` ships and can carry placeholders too; only skip dot-junk.
+    if (entry.name.startsWith('.') && !['.gitignore', '.github'].includes(entry.name)) continue;
     if (SKIP_DIRS.has(entry.name)) continue;
     const full = join(dir, entry.name);
     if (entry.isDirectory()) yield* walk(full);

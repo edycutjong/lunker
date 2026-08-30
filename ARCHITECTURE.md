@@ -63,7 +63,8 @@ sequenceDiagram
 
 ## Routes
 
-Seven, and the count is the contract. `/dev/cast` returns 404 unless
+Seven that carry behaviour, plus three trivial GETs (`/`, `/index.html`, and
+`/health`) served by the same router. `/dev/cast` returns 404 unless
 `DEV_CAST_ENABLED=1`, which it is not in production.
 
 | Route | Purpose | File |
@@ -128,9 +129,21 @@ Pass and no lake economy.**
    `initial_purchase` / `trial_started` / `expiration` so Journeys branch on real
    purchase state
 
-Four notification types: **bite alert** (the mechanic), **tide reminder**
-(suppressed if a bite was answered that day), **milestone catch**, and
-**lapsed-angler win-back** (branches on the forwarded `expiration`).
+### Notification types — what is in code vs what is dashboard config
+
+Stated separately because only one of the four is built in this repo, and a
+table that blurred the two would be the kind of claim this document exists to
+prevent.
+
+| Type | Status |
+|---|---|
+| **Bite alert** — the mechanic | **In code.** `worker/src/lib/bite.ts` → `OneSignalClient.sendBite`, dispatched by the cron handler. |
+| **Tide reminder** — streak-preserving | **Designed, not built.** Requires a Journey plus suppression-if-a-bite-was-answered-today; neither exists in this repo. |
+| **Milestone catch** | **Half built.** The entry event `rare_landed` is fired server-side from `routes/catch-resolved.ts`; the Journey that consumes it is dashboard config and is not yet created. |
+| **Lapsed-angler win-back** | **Designed, not built.** Depends on the RevenueCat → OneSignal integration below. |
+
+Item 7 above (the RevenueCat → OneSignal native integration) is likewise
+**dashboard configuration, not code**, and is not yet enabled.
 
 ## Where the build disagreed with the design
 

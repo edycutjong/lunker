@@ -56,7 +56,12 @@ export async function verify(req: Request, deps: Deps): Promise<Response> {
     testers: testers?.n ?? 0,
     purchase_events: purchases?.n ?? 0,
     ledger_tail: ledger.results ?? [],
-    note: 'Read-only, anonymized, live from production ledger.',
+    // Derived, not hardcoded: this page renders identically in local dev, and
+    // claiming "production" there would be a small lie on the one surface whose
+    // entire job is being checkable.
+    note: deps.env.DEV_CAST_ENABLED === '1'
+      ? 'Read-only, anonymized, live from the development ledger.'
+      : 'Read-only, anonymized, live from the production ledger.',
   };
 
   if (url.searchParams.get('format') === 'json') return json(payload);

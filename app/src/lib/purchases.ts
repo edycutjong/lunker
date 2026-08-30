@@ -63,7 +63,7 @@ export async function buyPackage(pkg: PurchasesPackage): Promise<CustomerInfo | 
 }
 
 /**
- * 5. virtualCurrencies — the wallet HUD.
+ * 5. getVirtualCurrencies — the wallet HUD.
  *
  * Always invalidate first when reading after a server-side movement: the SDK
  * caches, and a stale read would show the player a balance the server has

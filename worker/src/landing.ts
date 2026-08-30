@@ -186,7 +186,7 @@ export const LANDING_HTML = `<!doctype html>
         <div class="src" id="p50-src">Measured from send, not from open</div>
       </div>
       <div class="stat">
-        <div class="v" id="tests">199</div>
+        <div class="v" id="tests">207</div>
         <div class="k">tests, and a ledger you can read</div>
         <div class="src">node scripts/lunker-verify.mjs bench · <a href="/verify" style="color:var(--primary)">/verify</a></div>
       </div>
@@ -198,9 +198,10 @@ export const LANDING_HTML = `<!doctype html>
     <div class="steps">
       <div class="step">
         <h3>A bite arrives</h3>
-        <p>A OneSignal Journey picks the moment, weighted by your lake and the hour. The
-           notification carries a hard 60-second expiry — and says so on the lock screen,
-           inside Android's character budget, so the stakes are visible without expanding it.</p>
+        <p>The Worker's cron dispatcher picks the moment — your lake, your local hour, never
+           while you are asleep — writes the roll seed, then sends through OneSignal. The
+           notification carries a hard 60-second expiry and says so on the lock screen, inside
+           Android's character budget, so the stakes are visible without expanding it.</p>
       </div>
       <div class="step">
         <h3>You reel it in</h3>

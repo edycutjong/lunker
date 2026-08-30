@@ -168,7 +168,7 @@ export function computeBench(sent, pings, opts = {}) {
 const grp = (n) => n.toLocaleString('en-US');
 
 /**
- * Render the CLI report. The exact shape here is asserted in CI (seed-data.md
+ * Render the CLI report. The exact shape here is asserted in CI (.github/workflows/ci.yml
  * "Expected output"), so this is a contract, not cosmetics.
  *
  * @param {BenchResult} r

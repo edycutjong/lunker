@@ -12,7 +12,7 @@
 
 `React Native` · `Expo` · `RevenueCat Virtual Currency` · `OneSignal Journeys` · `Cloudflare Workers` · `D1`
 
-**199 tests** · built for RevenueCat Shipaton 2026 — *Keep Them Coming Back* and *Best Game*
+**207 tests** · built for RevenueCat Shipaton 2026 — *Keep Them Coming Back* and *Best Game*
 
 </div>
 
@@ -44,7 +44,7 @@ bite, so there is no game — not a degraded game, no game.
 
 | | |
 |---|---|
-| **A bite arrives** | A OneSignal Journey picks the moment, weighted by lake and local hour. Never two in an hour, never while you're asleep. |
+| **A bite arrives** | The Worker's cron dispatcher picks the moment — lake, local hour, one an hour at most, never while you're asleep, capped per lake per day. It writes the roll seed to D1, *then* sends via OneSignal REST. A Journey cannot own this step: the seed must exist before the push leaves. |
 | **You reel it in** | Deep link lands in the minigame. 60-second countdown, one thumb, haptic ticks on every zone crossing. |
 | **The coin is settled** | The server rolls the fish against a committed weight table and credits COIN through RevenueCat's Virtual Currency API. |
 | **You spend it** | Quarry Pool costs 1,200 COIN (atomic server-side debit). Deep Sea needs the Angler's Pass entitlement (RevenueCat paywall). |
@@ -109,7 +109,7 @@ built: [**ARCHITECTURE.md**](ARCHITECTURE.md).
 
 ## 🧪 Tests
 
-**199 tests**, `npm test`. The ones that matter:
+**207 tests**, `npm test`. The ones that matter:
 
 - **The bench arithmetic**, against a fixture whose right answer (17/39 = 43.6%,
   p50 9,000, p95 104,000) was computed by hand before the code existed. Each of
@@ -127,7 +127,7 @@ built: [**ARCHITECTURE.md**](ARCHITECTURE.md).
 ## 🏗 Run it
 
 ```sh
-npm install && npm test          # 199 tests
+npm install && npm test          # 207 tests
 npm run seed                     # deterministic content seed
 npm run bench                    # the killer-number computation, on fixture data
 
