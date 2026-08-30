@@ -34,8 +34,15 @@ export async function verify(req: Request, deps: Deps): Promise<Response> {
     )
     .all<{ delta: number; reason: string; rc_status: number; created_at: number }>();
 
+  // Only events where money actually moved TOWARD us. `purchase_events` also
+  // stores EXPIRATION (the win-back Journey branches on it), CANCELLATION and
+  // REFUND — counting those under a label that reads "HMAC-verified purchases"
+  // would inflate the one figure we invite a judge to audit, and it would do it
+  // in the direction that flatters us.
   const purchases = await db
-    .prepare('SELECT COUNT(*) AS n FROM purchase_events')
+    .prepare(
+      "SELECT COUNT(*) AS n FROM purchase_events WHERE event_type IN ('INITIAL_PURCHASE','NON_RENEWING_PURCHASE','RENEWAL')",
+    )
     .first<{ n: number }>();
 
   const testers = await db

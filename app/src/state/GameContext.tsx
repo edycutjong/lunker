@@ -19,6 +19,9 @@ import * as RC from '../lib/purchases';
 import * as OS from '../lib/onesignal';
 import * as api from '../lib/api';
 import { getOrCreateAppUserId } from '../lib/identity';
+import {
+  loadAlbum, saveAlbum, loadUnlockedLakes, saveUnlockedLakes,
+} from '../lib/storage';
 
 export interface AlbumEntry {
   fish_id: string;
@@ -101,6 +104,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       const appUserId = await getOrCreateAppUserId();
 
+      // Hydrate persisted progress FIRST. Syncing before this would push a
+      // freshly-booted "only the free lakes" state at the server and overwrite
+      // its record of a lake the player already paid for.
+      const [album, unlockedLakes] = await Promise.all([
+        loadAlbum(),
+        loadUnlockedLakes(FREE_LAKES),
+      ]);
+
       // Both SDKs get the SAME id. This is the identity spine.
       await RC.configurePurchases(process.env.EXPO_PUBLIC_RC_ANDROID_KEY ?? '', appUserId);
       const info = await RC.loginPurchases(appUserId);
@@ -118,15 +129,28 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         hasPass: RC.hasAnglersPass(info),
         coinBalance: balance,
         pushEnabled,
+        album,
+        unlockedLakes,
       }));
 
-      api.syncPlayer({
-        app_user_id: appUserId,
-        current_lake: 'willow',
-        unlocked_lakes: FREE_LAKES,
-        push_enabled: pushEnabled,
-        streak_days: 0,
-      });
+      // The server owns the streak and returns the merged unlock set, so this
+      // is also how the client learns both.
+      void api
+        .syncPlayer({
+          app_user_id: appUserId,
+          current_lake: 'willow',
+          unlocked_lakes: unlockedLakes,
+          push_enabled: pushEnabled,
+        })
+        .then((res) => {
+          if (cancelled || !res) return;
+          setState((s) => ({
+            ...s,
+            streakDays: res.streak_days ?? s.streakDays,
+            unlockedLakes: res.unlocked_lakes ?? s.unlockedLakes,
+          }));
+          if (res.unlocked_lakes) void saveUnlockedLakes(res.unlocked_lakes);
+        });
     })();
 
     return () => {
@@ -158,6 +182,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     recordCatch(entry) {
       setState((s) => {
         const album = [entry, ...s.album];
+        void saveAlbum(album);
         OS.syncTags({
           current_lake: s.currentLake,
           streak_days: s.streakDays,
@@ -177,7 +202,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             current_lake: lakeId,
             unlocked_lakes: s.unlockedLakes,
             push_enabled: s.pushEnabled,
-            streak_days: s.streakDays,
           });
         }
         return { ...s, currentLake: lakeId };
@@ -188,13 +212,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       setState((s) => {
         if (s.unlockedLakes.includes(lakeId)) return s;
         const unlockedLakes = [...s.unlockedLakes, lakeId];
+        void saveUnlockedLakes(unlockedLakes);
         if (s.appUserId) {
           api.syncPlayer({
             app_user_id: s.appUserId,
             current_lake: lakeId,
             unlocked_lakes: unlockedLakes,
             push_enabled: s.pushEnabled,
-            streak_days: s.streakDays,
           });
         }
         return { ...s, unlockedLakes, currentLake: lakeId };
@@ -225,7 +249,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             current_lake: s.currentLake,
             unlocked_lakes: s.unlockedLakes,
             push_enabled: granted,
-            streak_days: s.streakDays,
           });
         }
         return { ...s, pushEnabled: granted, pushDeclined: !granted };

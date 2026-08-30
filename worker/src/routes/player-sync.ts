@@ -15,6 +15,7 @@
  */
 
 import { getLake } from '../../../shared/content.js';
+import { nextStreak } from '../lib/streak.js';
 import type { Deps } from '../types.js';
 import { json, badRequest } from '../lib/http.js';
 
@@ -24,6 +25,8 @@ interface Body {
   unlocked_lakes?: string[];
   push_enabled?: boolean;
   tz_offset_min?: number;
+  /** Accepted for backward compatibility and deliberately IGNORED — the server
+   *  computes the streak. A client-declared streak is a forged streak. */
   streak_days?: number;
 }
 
@@ -43,6 +46,21 @@ export async function playerSync(req: Request, deps: Deps): Promise<Response> {
   const { db, now } = deps;
   const ts = now();
 
+  const previous = await db
+    .prepare('SELECT streak_days, last_active_at, unlocked_lakes FROM players WHERE app_user_id = ?')
+    .bind(body.app_user_id)
+    .first<{ streak_days: number; last_active_at: number | null; unlocked_lakes: string }>();
+
+  const streak = nextStreak(previous?.last_active_at ?? null, previous?.streak_days ?? 0, ts, tz);
+
+  // Union, never replace. A reinstalled client boots with only the free lakes
+  // and would otherwise overwrite the server's record of a lake the player
+  // already paid for — leaving Quarry showing its 1,200 COIN price to someone
+  // who has already bought it.
+  const merged = previous?.unlocked_lakes
+    ? Array.from(new Set([...previous.unlocked_lakes.split(',').filter(Boolean), ...unlocked]))
+    : unlocked;
+
   await db
     .prepare(
       `INSERT INTO players (app_user_id, current_lake, unlocked_lakes, streak_days, push_enabled, tz_offset_min, last_active_at, created_at)
@@ -55,17 +73,15 @@ export async function playerSync(req: Request, deps: Deps): Promise<Response> {
          tz_offset_min  = excluded.tz_offset_min,
          last_active_at = excluded.last_active_at`,
     )
-    .bind(
-      body.app_user_id,
-      currentLake,
-      unlocked.join(','),
-      Math.max(0, Math.trunc(body.streak_days ?? 0)),
-      body.push_enabled ? 1 : 0,
-      tz,
-      ts,
-      ts,
-    )
+    .bind(body.app_user_id, currentLake, merged.join(','), streak, body.push_enabled ? 1 : 0, tz, ts, ts)
     .run();
 
-  return json({ ok: true, app_user_id: body.app_user_id, current_lake: currentLake, unlocked_lakes: unlocked });
+  // The client renders the streak it is told, and tags OneSignal with it.
+  return json({
+    ok: true,
+    app_user_id: body.app_user_id,
+    current_lake: currentLake,
+    unlocked_lakes: merged,
+    streak_days: streak,
+  });
 }

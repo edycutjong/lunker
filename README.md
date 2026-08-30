@@ -12,7 +12,7 @@
 
 `React Native` · `Expo` · `RevenueCat Virtual Currency` · `OneSignal Journeys` · `Cloudflare Workers` · `D1`
 
-**184 tests** · built for RevenueCat Shipaton 2026 — *Keep Them Coming Back* and *Best Game*
+**199 tests** · built for RevenueCat Shipaton 2026 — *Keep Them Coming Back* and *Best Game*
 
 </div>
 
@@ -109,7 +109,7 @@ built: [**ARCHITECTURE.md**](ARCHITECTURE.md).
 
 ## 🧪 Tests
 
-**184 tests**, `npm test`. The ones that matter:
+**199 tests**, `npm test`. The ones that matter:
 
 - **The bench arithmetic**, against a fixture whose right answer (17/39 = 43.6%,
   p50 9,000, p95 104,000) was computed by hand before the code existed. Each of
@@ -127,7 +127,7 @@ built: [**ARCHITECTURE.md**](ARCHITECTURE.md).
 ## 🏗 Run it
 
 ```sh
-npm install && npm test          # 184 tests
+npm install && npm test          # 199 tests
 npm run seed                     # deterministic content seed
 npm run bench                    # the killer-number computation, on fixture data
 
@@ -176,6 +176,20 @@ bite", and no OneSignal Journey can write `sent.roll_seed` to D1 before a push
 leaves — which the roll design requires. Added a `players` table, a
 `POST /player/sync` route and a cron dispatcher, and updated the architecture
 rather than shipping a doc that described a system that could not run.
+
+**2026-08-30 — `streak_days` was a number nothing incremented.** Four documents
+claimed OneSignal Journeys branched on a streak. The column existed, the tag was
+sent, and its value was permanently `0` — a phantom integration surface dressed
+as depth. Now computed server-side from the player's own local calendar days, in
+[`worker/src/lib/streak.ts`](worker/src/lib/streak.ts), with the client's
+declared value explicitly ignored.
+
+**2026-08-30 — a reinstall could hide a lake you had paid for.** The album and
+the unlocked-lake set lived only in React state, so a relaunch booted with just
+the free lakes and pushed *that* to the server, overwriting its record. No money
+was lost (the spend is idempotent on its key), but a player who bought Quarry
+Pool saw it locked and priced at 1,200 COIN again. Both are now persisted
+locally, and `/player/sync` merges rather than replaces.
 
 [**FEEDBACK.md**](FEEDBACK.md) — DX friction we hit in the sponsor SDKs.
 

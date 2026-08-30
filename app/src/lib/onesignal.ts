@@ -103,11 +103,11 @@ export function onBiteOpened(handler: BiteHandler): () => void {
   return () => OneSignal.Notifications.removeEventListener('click', listener);
 }
 
-/** Fire a custom event a Journey can enter on. */
-export function trackEvent(name: string, properties: Record<string, unknown> = {}): void {
-  // The RN SDK exposes custom events through the live-activities/user surface
-  // depending on version; tags are the portable path and are what our Journeys
-  // are configured against.
-  OneSignal.User.addTag(`last_event_${name}`, String(Date.now()));
-  if (__DEV__) console.log('[onesignal] event', name, properties);
-}
+// NOTE: there is deliberately no client-side `trackEvent` here.
+//
+// Journey entry events (`rare_landed`, `lake_unlocked`) are fired SERVER-SIDE
+// from the Worker, because the server is the only party that knows what was
+// actually caught or actually paid for. A client-side event helper existed
+// briefly, wrote a `last_event_<name>` tag nothing consumed, and had no call
+// sites — so it was a phantom OneSignal surface. Removed rather than left
+// looking like integration depth.

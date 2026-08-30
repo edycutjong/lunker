@@ -104,19 +104,34 @@ export function reportBiteOpened(notificationId: string): void {
   post('/bite-opened', { notification_id: notificationId, opened_at: Date.now() }).catch(() => {});
 }
 
-/** Announce targeting state so the dispatcher knows who is due a bite. */
+export interface SyncResponse {
+  ok: boolean;
+  current_lake: string;
+  unlocked_lakes: string[];
+  /** Computed server-side. The client never declares its own streak. */
+  streak_days: number;
+}
+
+/**
+ * Announce targeting state so the dispatcher knows who is due a bite.
+ *
+ * Returns the server's view, which is authoritative for two things the client
+ * must not decide for itself: the streak, and the merged set of unlocked lakes
+ * (a reinstalled client must not be able to erase a lake it already paid for).
+ * Resolves to null on failure — a missed sync costs targeting freshness, never
+ * the session.
+ */
 export function syncPlayer(input: {
   app_user_id: string;
   current_lake: string;
   unlocked_lakes: string[];
   push_enabled: boolean;
-  streak_days: number;
-}): void {
-  post('/player/sync', {
+}): Promise<SyncResponse | null> {
+  return post<SyncResponse>('/player/sync', {
     ...input,
     // getTimezoneOffset is minutes BEHIND UTC; the server wants minutes ahead.
     tz_offset_min: -new Date().getTimezoneOffset(),
-  }).catch(() => {});
+  }).catch(() => null);
 }
 
 export const workerUrl = BASE;
