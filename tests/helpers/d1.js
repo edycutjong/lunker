@@ -7,12 +7,17 @@
  * would happily agree with a bug.
  */
 
-import { DatabaseSync } from 'node:sqlite';
+import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+
+// Loaded through createRequire rather than a static import: Vite's builtin list
+// does not yet recognise `node:sqlite` and rewrites it to a bare `sqlite`
+// specifier that resolves to nothing.
+const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite');
 
 class Stmt {
   constructor(db, sql) {
