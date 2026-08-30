@@ -1,0 +1,79 @@
+{
+  "bites_per_day": [
+    1,
+    2
+  ],
+  "cadence_weighting": "night",
+  "derived": {
+    "mean_coin_grant": 321.2,
+    "rarity_rates": {
+      "common": 0,
+      "legendary": 0.22,
+      "rare": 0.78,
+      "uncommon": 0
+    }
+  },
+  "fish": [
+    {
+      "coins": 180,
+      "id": "lantern_snapper",
+      "mass_kg": [
+        1.5,
+        4
+      ],
+      "name": "Lantern Snapper",
+      "rarity": "rare",
+      "weight": 48
+    },
+    {
+      "coins": 260,
+      "id": "abyss_ray",
+      "mass_kg": [
+        4,
+        9
+      ],
+      "name": "Abyss Ray",
+      "rarity": "rare",
+      "weight": 30
+    },
+    {
+      "coins": 520,
+      "id": "hadal_oarfish",
+      "mass_kg": [
+        8,
+        17
+      ],
+      "name": "Hadal Oarfish",
+      "rarity": "legendary",
+      "weight": 14
+    },
+    {
+      "coins": 900,
+      "id": "moonwake_leviathan",
+      "mass_kg": [
+        20,
+        48
+      ],
+      "name": "Moonwake Leviathan",
+      "rarity": "legendary",
+      "weight": 6
+    },
+    {
+      "coins": 1500,
+      "id": "the_lunker",
+      "mass_kg": [
+        30,
+        60
+      ],
+      "name": "The Lunker",
+      "rarity": "legendary",
+      "weight": 2
+    }
+  ],
+  "id": "deepsea",
+  "name": "Deep Sea",
+  "unlock": {
+    "entitlement": "anglers_pass",
+    "type": "entitlement"
+  }
+}

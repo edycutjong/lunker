@@ -1,18 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Lunker icon — a glowing fishing hook beneath ripples, with an amber bite notification dot">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Lunker icon — a sharp fishing hook beneath ripples, with an amber bite notification dot">
   <defs>
     <linearGradient id="plate" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#0B2F39"/>
       <stop offset="100%" stop-color="#03141B"/>
     </linearGradient>
-    <linearGradient id="hookGrad" gradientUnits="userSpaceOnUse" x1="320" y1="140" x2="196" y2="330">
-      <stop offset="0%" stop-color="var(--primary, #3FDBB6)"/>
-      <stop offset="58%" stop-color="var(--primary, #3FDBB6)"/>
+
+    <!-- steel runs teal down the shank and heats to amber at the business end -->
+    <linearGradient id="hookGrad" gradientUnits="userSpaceOnUse" x1="308" y1="170" x2="196" y2="286">
+      <stop offset="0%"  stop-color="var(--primary, #3FDBB6)"/>
+      <stop offset="52%" stop-color="var(--primary, #3FDBB6)"/>
       <stop offset="100%" stop-color="var(--accent, #FFA05A)"/>
     </linearGradient>
-    <linearGradient id="lineGrad" gradientUnits="userSpaceOnUse" x1="394" y1="110" x2="314" y2="118">
-      <stop offset="0%" stop-color="var(--accent, #FFA05A)"/>
-      <stop offset="100%" stop-color="var(--primary, #3FDBB6)"/>
+
+    <!-- line fades as it recedes toward the implied rod off-frame -->
+    <linearGradient id="lineGrad" gradientUnits="userSpaceOnUse" x1="300" y1="120" x2="118" y2="34">
+      <stop offset="0%" stop-color="var(--primary, #3FDBB6)" stop-opacity="1"/>
+      <stop offset="100%" stop-color="var(--primary, #3FDBB6)" stop-opacity="0.3"/>
     </linearGradient>
+
     <radialGradient id="tealGlow">
       <stop offset="0%" stop-color="var(--primary, #3FDBB6)" stop-opacity="0.26"/>
       <stop offset="100%" stop-color="var(--primary, #3FDBB6)" stop-opacity="0"/>
@@ -21,12 +26,33 @@
       <stop offset="0%" stop-color="var(--accent, #FFA05A)" stop-opacity="0.38"/>
       <stop offset="100%" stop-color="var(--accent, #FFA05A)" stop-opacity="0"/>
     </radialGradient>
+
     <clipPath id="plateClip">
       <rect x="16" y="16" width="480" height="480" rx="104"/>
     </clipPath>
     <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="10"/>
+      <feGaussianBlur stdDeviation="11"/>
     </filter>
+
+    <!-- ONE definition of the hook body, reused for glow + fill + highlight clip.
+         Built as a filled outline (not a stroke) so the point can actually come
+         to a vertex: a stroked path with linecap="round" is blunt by construction.
+         Anatomy per Eagle Claw / Wikipedia: eye, shank, bend, throat, gap, point,
+         barb — the point "tapers into a sharp end"; the barb is a small triangular
+         sliver that reverse-points relative to the main point. -->
+    <path id="hookBody" d="
+      M 311 164
+      L 311 329
+      A 63 63 0 0 1 185 329
+      Q 186 296 196 268
+      L 178 276
+      L 206 246
+      L 218 228
+      Q 212 275 207 329
+      A 41 41 0 0 0 289 329
+      L 289 164
+      Z
+    "/>
   </defs>
 
   <!-- midnight-lake plate -->
@@ -37,28 +63,38 @@
   </g>
   <rect x="16" y="16" width="480" height="480" rx="104" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
 
-  <!-- water ripples where the line enters the lake -->
+  <!-- water ripples where the line enters the lake, crossing the shank -->
   <g fill="none" stroke="var(--primary, #3FDBB6)">
-    <ellipse cx="312" cy="196" rx="46" ry="12" stroke-width="7" opacity="0.65"/>
-    <ellipse cx="312" cy="196" rx="84" ry="22" stroke-width="5" opacity="0.3"/>
+    <ellipse cx="304" cy="200" rx="44" ry="11" stroke-width="7" opacity="0.65"/>
+    <ellipse cx="304" cy="200" rx="78" ry="20" stroke-width="5" opacity="0.3"/>
   </g>
 
-  <!-- rising bubbles (inside the hook's opening, clear of the stroke) -->
-  <circle cx="252" cy="254" r="7" fill="var(--primary, #3FDBB6)" opacity="0.4"/>
-  <circle cx="272" cy="286" r="4.5" fill="var(--primary, #3FDBB6)" opacity="0.3"/>
+  <!-- rising bubbles, inside the gap so they never crowd the point -->
+  <circle cx="252" cy="286" r="7" fill="var(--primary, #3FDBB6)" opacity="0.4"/>
+  <circle cx="268" cy="318" r="4.5" fill="var(--primary, #3FDBB6)" opacity="0.3"/>
 
-  <!-- hook glow (soft duplicate) -->
-  <path d="M312 150 L312 300 A80 80 0 1 1 192 230.7" fill="none" stroke="var(--primary, #3FDBB6)" stroke-width="30" stroke-linecap="round" opacity="0.45" filter="url(#soft)"/>
+  <!-- underwater glow -->
+  <use href="#hookBody" fill="var(--primary, #3FDBB6)" opacity="0.45" filter="url(#soft)"/>
+  <circle cx="300" cy="142" r="29" fill="var(--primary, #3FDBB6)" opacity="0.4" filter="url(#soft)"/>
 
   <!-- the hook -->
-  <path d="M312 150 L312 300 A80 80 0 1 1 192 230.7" fill="none" stroke="url(#hookGrad)" stroke-width="30" stroke-linecap="round"/>
-  <!-- barb -->
-  <path d="M192 230.7 L217 252" fill="none" stroke="var(--accent, #FFA05A)" stroke-width="20" stroke-linecap="round"/>
-  <!-- hook eye -->
-  <circle cx="312" cy="128" r="16" fill="none" stroke="var(--primary, #3FDBB6)" stroke-width="13"/>
+  <use href="#hookBody" fill="url(#hookGrad)"/>
 
-  <!-- filament from the bite badge down to the eye -->
-  <path d="M394 110 C 374 136, 338 130, 316 114" fill="none" stroke="url(#lineGrad)" stroke-width="9" stroke-linecap="round" opacity="0.9"/>
+  <!-- eye: a ring of the same wire. Stroked circle == annulus, and it merges with
+       the shank top instead of floating above it like the old version did. -->
+  <circle cx="300" cy="142" r="21" fill="none" stroke="url(#hookGrad)" stroke-width="17"/>
+
+  <!-- specular edge — reads as ground steel, and keeps the point legible against the glow -->
+  <path d="M 293 168 L 293 320" fill="none" stroke="rgba(255,255,255,0.34)" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- honed edge on the last third of the point: this is what reads as "sharp" -->
+  <path d="M 214 236 L 209 256" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2.4" stroke-linecap="round"/>
+  <circle cx="216.8" cy="230.5" r="2.8" fill="#FFFFFF" opacity="0.92"/>
+
+  <!-- Line runs from the eye up and OUT of the top-left corner, toward an implied rod.
+       It deliberately does not terminate in anything: a line that ends in a sphere reads
+       as a tether, which is why the badge used to look like a ball on a string. The badge
+       now sits alone in the top-right, doing one job. -->
+  <path d="M 296 118 C 262 88, 190 58, 118 34" fill="none" stroke="url(#lineGrad)" stroke-width="8" stroke-linecap="round" opacity="0.8"/>
 
   <!-- bite notification badge -->
   <circle cx="398" cy="84" r="54" fill="url(#amberGlow)"/>

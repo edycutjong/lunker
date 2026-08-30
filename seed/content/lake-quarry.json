@@ -1,0 +1,79 @@
+{
+  "bites_per_day": [
+    2,
+    3
+  ],
+  "cadence_weighting": "even",
+  "derived": {
+    "mean_coin_grant": 100.3,
+    "rarity_rates": {
+      "common": 0,
+      "legendary": 0,
+      "rare": 0.22,
+      "uncommon": 0.78
+    }
+  },
+  "fish": [
+    {
+      "coins": 70,
+      "id": "slate_bream",
+      "mass_kg": [
+        0.7,
+        2.2
+      ],
+      "name": "Slate Bream",
+      "rarity": "uncommon",
+      "weight": 46
+    },
+    {
+      "coins": 85,
+      "id": "quarry_chub",
+      "mass_kg": [
+        1.2,
+        3
+      ],
+      "name": "Quarry Chub",
+      "rarity": "uncommon",
+      "weight": 32
+    },
+    {
+      "coins": 150,
+      "id": "copper_bass",
+      "mass_kg": [
+        2.8,
+        5.5
+      ],
+      "name": "Copper Bass",
+      "rarity": "rare",
+      "weight": 15
+    },
+    {
+      "coins": 240,
+      "id": "anvil_catfish",
+      "mass_kg": [
+        6,
+        12
+      ],
+      "name": "Anvil Catfish",
+      "rarity": "rare",
+      "weight": 6
+    },
+    {
+      "coins": 400,
+      "id": "drowned_bell_carp",
+      "mass_kg": [
+        9,
+        18
+      ],
+      "name": "Drowned Bell Carp",
+      "rarity": "rare",
+      "weight": 1
+    }
+  ],
+  "id": "quarry",
+  "name": "Quarry Pool",
+  "unlock": {
+    "cost": 1200,
+    "type": "coin"
+  }
+}

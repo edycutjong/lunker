@@ -1,0 +1,38 @@
+{
+  "products": [
+    {
+      "coins": 500,
+      "display": "Bait Tin",
+      "kind": "consumable",
+      "price_tier_usd": 0.99,
+      "product_id": "coins_500",
+      "vc_associated": true
+    },
+    {
+      "coins": 1600,
+      "display": "Tackle Box",
+      "kind": "consumable",
+      "price_tier_usd": 2.99,
+      "product_id": "coins_1600",
+      "vc_associated": true
+    },
+    {
+      "coins": 6000,
+      "display": "Trawler Haul",
+      "kind": "consumable",
+      "price_tier_usd": 9.99,
+      "product_id": "coins_6000",
+      "vc_associated": true
+    },
+    {
+      "coins": null,
+      "display": "Angler's Pass",
+      "entitlement": "anglers_pass",
+      "kind": "subscription",
+      "price_tier_usd": 4.99,
+      "product_id": "anglers_pass",
+      "trial_days": 7
+    }
+  ],
+  "seed": "lunker-2026"
+}

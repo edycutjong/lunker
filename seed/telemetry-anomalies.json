@@ -1,0 +1,441 @@
+{
+  "_meta": {
+    "purpose": "VALIDATION DATA — NOT SUBMITTABLE",
+    "seed": "lunker-2026",
+    "generated_by": "scripts/lunker-verify.mjs seed:anomalies",
+    "description": "Telemetry anomaly fixtures E1-E4 plus 20 ordinary rows. Proves the bench arithmetic on cases whose correct answer is known in advance. Never a source for any published figure.",
+    "expected": {
+      "ingested": 45,
+      "denominator": 39,
+      "answered": 17,
+      "answered_pct": 43.6,
+      "p50": 9000,
+      "p95": 104000,
+      "max": 118000,
+      "latency_n": 23,
+      "duplicate_ids": 3,
+      "duplicate_rows": 6,
+      "clock_skew": 4,
+      "fabricated": 3,
+      "never_opened": 12
+    }
+  },
+  "sent": [
+    {
+      "notification_id": "ord-01",
+      "app_user_id": "tester-1",
+      "lake_id": "willow",
+      "sent_at": 1756512000000
+    },
+    {
+      "notification_id": "ord-02",
+      "app_user_id": "tester-2",
+      "lake_id": "reeds",
+      "sent_at": 1756512060000
+    },
+    {
+      "notification_id": "ord-03",
+      "app_user_id": "tester-3",
+      "lake_id": "quarry",
+      "sent_at": 1756512120000
+    },
+    {
+      "notification_id": "ord-04",
+      "app_user_id": "tester-4",
+      "lake_id": "deepsea",
+      "sent_at": 1756512180000
+    },
+    {
+      "notification_id": "ord-05",
+      "app_user_id": "tester-5",
+      "lake_id": "willow",
+      "sent_at": 1756512240000
+    },
+    {
+      "notification_id": "ord-06",
+      "app_user_id": "tester-6",
+      "lake_id": "reeds",
+      "sent_at": 1756512300000
+    },
+    {
+      "notification_id": "ord-07",
+      "app_user_id": "tester-7",
+      "lake_id": "quarry",
+      "sent_at": 1756512360000
+    },
+    {
+      "notification_id": "ord-08",
+      "app_user_id": "tester-8",
+      "lake_id": "deepsea",
+      "sent_at": 1756512420000
+    },
+    {
+      "notification_id": "ord-09",
+      "app_user_id": "tester-9",
+      "lake_id": "willow",
+      "sent_at": 1756512480000
+    },
+    {
+      "notification_id": "ord-10",
+      "app_user_id": "tester-10",
+      "lake_id": "reeds",
+      "sent_at": 1756512540000
+    },
+    {
+      "notification_id": "ord-11",
+      "app_user_id": "tester-11",
+      "lake_id": "quarry",
+      "sent_at": 1756512600000
+    },
+    {
+      "notification_id": "ord-12",
+      "app_user_id": "tester-12",
+      "lake_id": "deepsea",
+      "sent_at": 1756512660000
+    },
+    {
+      "notification_id": "ord-13",
+      "app_user_id": "tester-1",
+      "lake_id": "willow",
+      "sent_at": 1756512720000
+    },
+    {
+      "notification_id": "ord-14",
+      "app_user_id": "tester-2",
+      "lake_id": "reeds",
+      "sent_at": 1756512780000
+    },
+    {
+      "notification_id": "ord-15",
+      "app_user_id": "tester-3",
+      "lake_id": "quarry",
+      "sent_at": 1756512840000
+    },
+    {
+      "notification_id": "ord-16",
+      "app_user_id": "tester-4",
+      "lake_id": "deepsea",
+      "sent_at": 1756512900000
+    },
+    {
+      "notification_id": "ord-17",
+      "app_user_id": "tester-5",
+      "lake_id": "willow",
+      "sent_at": 1756512960000
+    },
+    {
+      "notification_id": "ord-18",
+      "app_user_id": "tester-6",
+      "lake_id": "reeds",
+      "sent_at": 1756513020000
+    },
+    {
+      "notification_id": "ord-19",
+      "app_user_id": "tester-7",
+      "lake_id": "quarry",
+      "sent_at": 1756513080000
+    },
+    {
+      "notification_id": "ord-20",
+      "app_user_id": "tester-8",
+      "lake_id": "deepsea",
+      "sent_at": 1756513140000
+    },
+    {
+      "notification_id": "dup-01",
+      "app_user_id": "tester-9",
+      "lake_id": "willow",
+      "sent_at": 1756518000000
+    },
+    {
+      "notification_id": "dup-02",
+      "app_user_id": "tester-10",
+      "lake_id": "reeds",
+      "sent_at": 1756518060000
+    },
+    {
+      "notification_id": "dup-03",
+      "app_user_id": "tester-11",
+      "lake_id": "quarry",
+      "sent_at": 1756518120000
+    },
+    {
+      "notification_id": "skew-01",
+      "app_user_id": "tester-12",
+      "lake_id": "deepsea",
+      "sent_at": 1756524000000
+    },
+    {
+      "notification_id": "skew-02",
+      "app_user_id": "tester-1",
+      "lake_id": "willow",
+      "sent_at": 1756524060000
+    },
+    {
+      "notification_id": "skew-03",
+      "app_user_id": "tester-2",
+      "lake_id": "reeds",
+      "sent_at": 1756524120000
+    },
+    {
+      "notification_id": "skew-04",
+      "app_user_id": "tester-3",
+      "lake_id": "quarry",
+      "sent_at": 1756524180000
+    },
+    {
+      "notification_id": "unopened-01",
+      "app_user_id": "tester-4",
+      "lake_id": "deepsea",
+      "sent_at": 1756530000000
+    },
+    {
+      "notification_id": "unopened-02",
+      "app_user_id": "tester-5",
+      "lake_id": "willow",
+      "sent_at": 1756530060000
+    },
+    {
+      "notification_id": "unopened-03",
+      "app_user_id": "tester-6",
+      "lake_id": "reeds",
+      "sent_at": 1756530120000
+    },
+    {
+      "notification_id": "unopened-04",
+      "app_user_id": "tester-7",
+      "lake_id": "quarry",
+      "sent_at": 1756530180000
+    },
+    {
+      "notification_id": "unopened-05",
+      "app_user_id": "tester-8",
+      "lake_id": "deepsea",
+      "sent_at": 1756530240000
+    },
+    {
+      "notification_id": "unopened-06",
+      "app_user_id": "tester-9",
+      "lake_id": "willow",
+      "sent_at": 1756530300000
+    },
+    {
+      "notification_id": "unopened-07",
+      "app_user_id": "tester-10",
+      "lake_id": "reeds",
+      "sent_at": 1756530360000
+    },
+    {
+      "notification_id": "unopened-08",
+      "app_user_id": "tester-11",
+      "lake_id": "quarry",
+      "sent_at": 1756530420000
+    },
+    {
+      "notification_id": "unopened-09",
+      "app_user_id": "tester-12",
+      "lake_id": "deepsea",
+      "sent_at": 1756530480000
+    },
+    {
+      "notification_id": "unopened-10",
+      "app_user_id": "tester-1",
+      "lake_id": "willow",
+      "sent_at": 1756530540000
+    },
+    {
+      "notification_id": "unopened-11",
+      "app_user_id": "tester-2",
+      "lake_id": "reeds",
+      "sent_at": 1756530600000
+    },
+    {
+      "notification_id": "unopened-12",
+      "app_user_id": "tester-3",
+      "lake_id": "quarry",
+      "sent_at": 1756530660000
+    }
+  ],
+  "pings": [
+    {
+      "notification_id": "ord-01",
+      "opened_at": 1756512002000
+    },
+    {
+      "notification_id": "ord-02",
+      "opened_at": 1756512062500
+    },
+    {
+      "notification_id": "ord-03",
+      "opened_at": 1756512123500
+    },
+    {
+      "notification_id": "ord-04",
+      "opened_at": 1756512184200
+    },
+    {
+      "notification_id": "ord-05",
+      "opened_at": 1756512245000
+    },
+    {
+      "notification_id": "ord-06",
+      "opened_at": 1756512305800
+    },
+    {
+      "notification_id": "ord-07",
+      "opened_at": 1756512366500
+    },
+    {
+      "notification_id": "ord-08",
+      "opened_at": 1756512427200
+    },
+    {
+      "notification_id": "ord-09",
+      "opened_at": 1756512488600
+    },
+    {
+      "notification_id": "ord-10",
+      "opened_at": 1756512549000
+    },
+    {
+      "notification_id": "ord-11",
+      "opened_at": 1756512614000
+    },
+    {
+      "notification_id": "ord-12",
+      "opened_at": 1756512693000
+    },
+    {
+      "notification_id": "ord-13",
+      "opened_at": 1756512764000
+    },
+    {
+      "notification_id": "ord-14",
+      "opened_at": 1756512832000
+    },
+    {
+      "notification_id": "ord-15",
+      "opened_at": 1756512904000
+    },
+    {
+      "notification_id": "ord-16",
+      "opened_at": 1756512971000
+    },
+    {
+      "notification_id": "ord-17",
+      "opened_at": 1756513043000
+    },
+    {
+      "notification_id": "ord-18",
+      "opened_at": 1756513115000
+    },
+    {
+      "notification_id": "ord-19",
+      "opened_at": 1756513184000
+    },
+    {
+      "notification_id": "ord-20",
+      "opened_at": 1756513258000
+    },
+    {
+      "notification_id": "dup-01",
+      "opened_at": 1756518003000
+    },
+    {
+      "notification_id": "dup-01",
+      "opened_at": 1756518041000
+    },
+    {
+      "notification_id": "dup-02",
+      "opened_at": 1756518068000
+    },
+    {
+      "notification_id": "dup-02",
+      "opened_at": 1756518112000
+    },
+    {
+      "notification_id": "dup-03",
+      "opened_at": 1756518141000
+    },
+    {
+      "notification_id": "dup-03",
+      "opened_at": 1756518215000
+    },
+    {
+      "notification_id": "skew-01",
+      "opened_at": 1756523998500
+    },
+    {
+      "notification_id": "skew-02",
+      "opened_at": 1756524056000
+    },
+    {
+      "notification_id": "skew-03",
+      "opened_at": 1756524108000
+    },
+    {
+      "notification_id": "skew-04",
+      "opened_at": 1756524150000
+    },
+    {
+      "notification_id": "unopened-01",
+      "opened_at": null
+    },
+    {
+      "notification_id": "unopened-02",
+      "opened_at": null
+    },
+    {
+      "notification_id": "unopened-03",
+      "opened_at": null
+    },
+    {
+      "notification_id": "unopened-04",
+      "opened_at": null
+    },
+    {
+      "notification_id": "unopened-05",
+      "opened_at": null
+    },
+    {
+      "notification_id": "unopened-06",
+      "opened_at": null
+    },
+    {
+      "notification_id": "unopened-07",
+      "opened_at": null
+    },
+    {
+      "notification_id": "unopened-08",
+      "opened_at": null
+    },
+    {
+      "notification_id": "unopened-09",
+      "opened_at": null
+    },
+    {
+      "notification_id": "unopened-10",
+      "opened_at": null
+    },
+    {
+      "notification_id": "unopened-11",
+      "opened_at": null
+    },
+    {
+      "notification_id": "unopened-12",
+      "opened_at": null
+    },
+    {
+      "notification_id": "fake-01",
+      "opened_at": 1756536005000
+    },
+    {
+      "notification_id": "fake-02",
+      "opened_at": 1756536005000
+    },
+    {
+      "notification_id": "fake-03",
+      "opened_at": 1756536005000
+    }
+  ]
+}

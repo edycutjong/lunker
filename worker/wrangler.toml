@@ -1,0 +1,25 @@
+name = "lunker"
+main = "src/index.ts"
+compatibility_date = "2026-08-01"
+compatibility_flags = ["nodejs_compat"]
+
+# The bite dispatcher. Every 15 minutes it sends to whoever is due; the per-player
+# cadence gate (one bite per hour, never outside the lake's hours) lives in
+# src/lib/bite.ts, not in this schedule.
+[triggers]
+crons = ["*/15 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "lunker"
+database_id = "⟦FILL:D1_DATABASE_ID⟧"
+migrations_dir = "migrations"
+
+[vars]
+REVENUECAT_PROJECT_ID = "⟦FILL:REVENUECAT_PROJECT_ID⟧"
+ONESIGNAL_APP_ID = "⟦FILL:ONESIGNAL_APP_ID⟧"
+DEV_CAST_ENABLED = "0"
+
+# Secrets are set with `wrangler secret put` and never live in this file:
+#   REVENUECAT_SECRET_KEY, REVENUECAT_WEBHOOK_SECRET,
+#   ONESIGNAL_REST_API_KEY, ROLL_SERVER_SECRET

@@ -1,0 +1,36 @@
+{
+  "lakes": [
+    {
+      "id": "willow",
+      "name": "Willow Lake",
+      "unlock": {
+        "type": "free"
+      }
+    },
+    {
+      "id": "reeds",
+      "name": "Reed Shallows",
+      "unlock": {
+        "type": "free"
+      }
+    },
+    {
+      "id": "quarry",
+      "name": "Quarry Pool",
+      "unlock": {
+        "cost": 1200,
+        "type": "coin"
+      }
+    },
+    {
+      "id": "deepsea",
+      "name": "Deep Sea",
+      "unlock": {
+        "entitlement": "anglers_pass",
+        "type": "entitlement"
+      }
+    }
+  ],
+  "note": "Prices are intended tiers for diffing against the RevenueCat dashboard. The app renders the store's own localized priceString and never these literals.",
+  "seed": "lunker-2026"
+}

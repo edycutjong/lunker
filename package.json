@@ -1,0 +1,17 @@
+{
+  "name": "lunker",
+  "private": true,
+  "type": "module",
+  "description": "The fish bite while your phone is in your pocket.",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "seed": "node scripts/seed.mjs",
+    "seed:anomalies": "node scripts/lunker-verify.mjs seed:anomalies",
+    "bench": "node scripts/lunker-verify.mjs bench --source fixture --file seed/telemetry-anomalies.json --window-sec 60",
+    "readiness": "node scripts/check-submission-readiness.mjs"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.8"
+  }
+}

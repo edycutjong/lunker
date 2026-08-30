@@ -1,0 +1,67 @@
+{
+  "bites_per_day": [
+    2,
+    4
+  ],
+  "cadence_weighting": "even",
+  "derived": {
+    "mean_coin_grant": 25.05,
+    "rarity_rates": {
+      "common": 0.82,
+      "legendary": 0,
+      "rare": 0,
+      "uncommon": 0.18
+    }
+  },
+  "fish": [
+    {
+      "coins": 15,
+      "id": "minnow_shoal",
+      "mass_kg": [
+        0.1,
+        0.5
+      ],
+      "name": "Minnow Shoal",
+      "rarity": "common",
+      "weight": 52
+    },
+    {
+      "coins": 22,
+      "id": "reed_roach",
+      "mass_kg": [
+        0.3,
+        1.1
+      ],
+      "name": "Reed Roach",
+      "rarity": "common",
+      "weight": 30
+    },
+    {
+      "coins": 55,
+      "id": "green_tench",
+      "mass_kg": [
+        1,
+        2.6
+      ],
+      "name": "Green Tench",
+      "rarity": "uncommon",
+      "weight": 13
+    },
+    {
+      "coins": 70,
+      "id": "glass_eel",
+      "mass_kg": [
+        0.6,
+        1.4
+      ],
+      "name": "Glass Eel",
+      "rarity": "uncommon",
+      "weight": 5
+    }
+  ],
+  "id": "reeds",
+  "name": "Reed Shallows",
+  "unlock": {
+    "type": "free"
+  }
+}
