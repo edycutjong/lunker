@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "Lunker",
+    "slug": "lunker",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "lunker",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#04171E",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#04171E"
+    },
+    "android": {
+      "package": "com.lunker.game",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#04171E"
+      },
+      "permissions": ["POST_NOTIFICATIONS", "VIBRATE"],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": false,
+          "data": [{ "scheme": "lunker" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "plugins": [
+      ["onesignal-expo-plugin", { "mode": "production" }]
+    ],
+    "extra": {
+      "workerUrl": "https://lunker.workers.dev"
+    }
+  }
+}
