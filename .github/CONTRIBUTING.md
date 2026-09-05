@@ -17,7 +17,7 @@ one bug that would make the whole project not worth believing.
 | `app/` | Expo / React Native app (Android). No paywall UI of its own — RevenueCat renders it. |
 | `shared/` | Plain ESM imported unchanged by the Worker, the app *and* the CLIs. The content seed and the bench arithmetic live here. |
 | `scripts/` | Three Node ESM CLIs: seed, verify/bench, submission readiness. |
-| `tests/` | Vitest. 207 tests across 9 files, run from the repo root. |
+| `tests/` | Vitest. 219 tests across 10 files, run from the repo root. |
 
 ## Getting set up
 
@@ -44,7 +44,7 @@ history, which is what matters when the repo goes public.
 ## Before you open a PR
 
 ```sh
-npm run ci          # prettier --check, eslint, 207 tests
+npm run ci          # prettier --check, eslint, 219 tests
 npm run typecheck   # tsc --noEmit for the Worker and the app
 npm run secrets     # gitleaks, if you have it installed locally
 ```
