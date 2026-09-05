@@ -117,9 +117,24 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       ]);
 
       // Both SDKs get the SAME id. This is the identity spine.
-      await RC.configurePurchases(process.env.EXPO_PUBLIC_RC_ANDROID_KEY ?? '', appUserId);
-      const info = await RC.loginPurchases(appUserId);
+      //
+      // OneSignal goes FIRST, and RevenueCat's failures are contained, because
+      // the two have very different blast radii. RevenueCat being unreachable —
+      // an outage, an unset key, a cold launch with no network — costs the
+      // player a coin balance until the next read. The same failure taking
+      // OneSignal down with it costs them every future bite, which is the whole
+      // game. Push must never be downstream of monetization.
       OS.initOneSignal(process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID ?? '', appUserId);
+
+      await RC.configurePurchases(process.env.EXPO_PUBLIC_RC_ANDROID_KEY ?? '', appUserId).catch(
+        (err: unknown) => {
+          if (__DEV__) console.warn('[lunker] RevenueCat configure failed:', err);
+        },
+      );
+      const info = await RC.loginPurchases(appUserId).catch((err: unknown) => {
+        if (__DEV__) console.warn('[lunker] RevenueCat logIn failed:', err);
+        return null;
+      });
 
       const pushEnabled = OS.hasPushPermission();
       const balance = await RC.readCoinBalance({ fresh: true }).catch(() => null);
@@ -247,9 +262,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         if (primed.current || OS.hasPushPermission()) return;
         primed.current = true;
 
-        OS.triggerPermissionPrime();
-        const granted = await OS.requestPushPermission();
-        OS.clearPermissionPrime();
+        // The native prompt fires from the prime's own accept button, inside
+        // primeThenRequestPush — not here, and not alongside it.
+        const granted = await OS.primeThenRequestPush();
 
         setState((s) => {
           if (s.appUserId) {

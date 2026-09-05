@@ -13,7 +13,14 @@
  * does not degrade the experience — it deletes it.
  */
 
-import { OneSignal, LogLevel, type NotificationClickEvent } from 'react-native-onesignal';
+import {
+  OneSignal,
+  LogLevel,
+  type NotificationClickEvent,
+  type InAppMessageClickEvent,
+  type InAppMessageWillDisplayEvent,
+  type InAppMessageDidDismissEvent,
+} from 'react-native-onesignal';
 
 export type BiteHandler = (lakeId: string, notificationId: string) => void;
 
@@ -41,29 +48,77 @@ export function hasPushPermission(): boolean {
   return OneSignal.Notifications.hasPermission();
 }
 
-/**
- * Ask for the native Android 13+ permission.
- *
- * Only ever called after the prime has been accepted — never on cold start.
- */
-export async function requestPushPermission(): Promise<boolean> {
-  return OneSignal.Notifications.requestPermission(true);
-}
+/** Trigger key the dashboard in-app message is authored against. */
+export const PRIME_TRIGGER = 'prime_push';
+
+/** Action id on the message's accept button. Must match the dashboard exactly. */
+export const PRIME_ACCEPT_ACTION_ID = 'prime_accept';
 
 /**
- * Show the OneSignal in-app message prime.
+ * How long to wait for the prime to appear before giving up on it.
  *
- * The prime is authored in the OneSignal dashboard and triggered by this tag,
- * so the copy can be tuned without shipping an app update. The native prompt is
- * fired from the message's own click handler, which is what keeps a "no" here
- * recoverable — a "no" to the native prompt is not.
+ * If no message is authored, or the player is not eligible for it, no
+ * `willDisplay` ever arrives. Waiting forever would mean nobody is ever asked
+ * for permission at all — strictly worse than an unprimed prompt.
  */
-export function triggerPermissionPrime(): void {
-  OneSignal.InAppMessages.addTrigger('prime_push', 'true');
-}
+export const PRIME_DISPLAY_TIMEOUT_MS = 4000;
 
-export function clearPermissionPrime(): void {
-  OneSignal.InAppMessages.removeTrigger('prime_push');
+/**
+ * Prime, then ask — in that order, with the native prompt fired FROM the
+ * message's own click handler.
+ *
+ * This ordering is the whole point and it is easy to get wrong in a way that
+ * looks right: calling `requestPermission()` immediately after `addTrigger()`
+ * puts the OS dialog on screen at the same moment as the prime, which is not
+ * priming, it is two prompts at once. A "no" to an in-app message is
+ * recoverable — we can ask again next session. A "no" to the native Android
+ * prompt is not, and for a game whose entire premise is push, that is not a
+ * degraded experience, it is no experience.
+ *
+ * Resolves to whether push permission is now granted.
+ */
+export function primeThenRequestPush(timeoutMs = PRIME_DISPLAY_TIMEOUT_MS): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    let settled = false;
+    let displayed = false;
+
+    const onClick = (event: InAppMessageClickEvent) => {
+      if (event?.result?.actionId === PRIME_ACCEPT_ACTION_ID) void finish(true);
+    };
+    const onWillDisplay = (_event: InAppMessageWillDisplayEvent) => {
+      displayed = true;
+    };
+    // Dismissed without accepting. Deliberately does NOT fall through to the
+    // native prompt — that would spend the one unrecoverable ask on a player
+    // who just said no.
+    const onDidDismiss = (_event: InAppMessageDidDismissEvent) => {
+      void finish(false);
+    };
+
+    const finish = async (accepted: boolean) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      OneSignal.InAppMessages.removeEventListener('click', onClick);
+      OneSignal.InAppMessages.removeEventListener('willDisplay', onWillDisplay);
+      OneSignal.InAppMessages.removeEventListener('didDismiss', onDidDismiss);
+      OneSignal.InAppMessages.removeTrigger(PRIME_TRIGGER);
+      resolve(accepted ? await OneSignal.Notifications.requestPermission(true) : false);
+    };
+
+    const timer = setTimeout(() => {
+      // The prime never showed. Ask natively rather than never asking — and
+      // only when it never *displayed*, so a player still reading it is not
+      // interrupted by the OS dialog.
+      if (!displayed) void finish(true);
+    }, timeoutMs);
+
+    OneSignal.InAppMessages.addEventListener('click', onClick);
+    OneSignal.InAppMessages.addEventListener('willDisplay', onWillDisplay);
+    OneSignal.InAppMessages.addEventListener('didDismiss', onDidDismiss);
+
+    OneSignal.InAppMessages.addTrigger(PRIME_TRIGGER, 'true');
+  });
 }
 
 /**
