@@ -82,24 +82,6 @@ export default tseslint.config(
     },
   },
 
-  // ── Expo config plugins (CommonJS, Node, build-time only) ────────────────
-  // These run on the developer's machine during `expo prebuild`, not on the
-  // device, so they are Node CJS rather than React Native ESM — a distinction
-  // the `app/**` block below would otherwise get wrong.
-  {
-    files: ['app/plugins/**/*.js'],
-    languageOptions: {
-      ecmaVersion: 2023,
-      sourceType: 'commonjs',
-      globals: { ...globals.node },
-    },
-    rules: {
-      // A signing config that silently fell back to the debug keystore is the
-      // failure this plugin exists to prevent; it has to be able to say so.
-      'no-console': 'off',
-    },
-  },
-
   // ── Cloudflare Worker (TypeScript, Workers runtime) ──────────────────────
   {
     files: ['worker/src/**/*.ts'],
@@ -159,6 +141,29 @@ export default tseslint.config(
       // The minigame runs a fixed-step loop off the wall clock; a stale closure
       // over `zone` or `elapsed` is the bug that makes the fish uncatchable.
       'react-hooks/exhaustive-deps': 'error',
+    },
+  },
+
+  // ── Build-time CommonJS: Expo config plugins and tool configs ────────────
+  // These run on the developer's machine during `expo prebuild` and on the CI
+  // runner — never on the device. They are Node CJS, not React Native ESM, so
+  // `require()` and `module.exports` are correct here rather than legacy.
+  //
+  // Must sit AFTER the `app/**` block: flat config lets a later block override
+  // an earlier one, and `app/*.js` matches metro.config.js and babel.config.js
+  // as direct children of app/.
+  {
+    files: ['app/plugins/**/*.js', 'app/metro.config.js', 'app/babel.config.js'],
+    languageOptions: {
+      ecmaVersion: 2023,
+      sourceType: 'commonjs',
+      globals: { ...globals.node },
+    },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+      // A signing config that silently fell back to the debug keystore is the
+      // failure withReleaseSigning exists to prevent; it has to be able to say so.
+      'no-console': 'off',
     },
   },
 
