@@ -16,7 +16,7 @@ import { verify } from './routes/verify.js';
 import { playerSync } from './routes/player-sync.js';
 import { devCast } from './routes/dev-cast.js';
 import { dispatchBite, isDue, bitesSentToday, dailyCapFor, type Player } from './lib/bite.js';
-import { LANDING_HTML } from './landing.js';
+import { renderLanding } from './landing.js';
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
@@ -46,7 +46,7 @@ export default {
 
       if (req.method === 'GET') {
         if (path === '/verify') return await verify(req, deps);
-        if (path === '/' || path === '/index.html') return html(LANDING_HTML);
+        if (path === '/' || path === '/index.html') return html(renderLanding());
         if (path === '/health') return json({ ok: true });
       }
 

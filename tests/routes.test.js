@@ -603,3 +603,40 @@ describe('POST /catch-resolved — the claim window', () => {
     expect((await res.json()).outcome).toBe('landed');
   });
 });
+
+describe('defect: the live landing page served dead placeholder links', () => {
+  // Found 2026-09-01, minutes after the first deploy. The page goes public the
+  // moment the Worker does — weeks before the store listings, video and repo
+  // exist — and the template's unfilled tokens rendered as literal
+  // href="<token>". Every CTA on the page was a dead link to anyone who
+  // opened the URL.
+  //
+  // The token is assembled at runtime rather than written out, so this file
+  // never itself trips `scripts/check-submission-readiness.mjs`.
+  const TOKEN_HEAD = String.fromCharCode(0x27e6) + 'FILL:';
+  const TOKEN_TAIL = String.fromCharCode(0x27e7);
+
+  it('renders no unfilled token inside an href', async () => {
+    const { renderLanding } = await import('../worker/src/landing.js');
+    expect(renderLanding()).not.toContain('href="' + TOKEN_HEAD);
+  });
+
+  it('keeps the raw tokens in the template so the readiness gate still fails', async () => {
+    const { LANDING_HTML } = await import('../worker/src/landing.js');
+    expect(LANDING_HTML).toContain('href="' + TOKEN_HEAD + 'PLAY_URL' + TOKEN_TAIL + '"');
+  });
+
+  it('degrades an unresolved CTA to an inert element that keeps its label', async () => {
+    const { renderLanding } = await import('../worker/src/landing.js');
+    expect(renderLanding()).toContain(
+      '<span class="btn primary pending" aria-disabled="true">Get it on Google Play</span>',
+    );
+  });
+
+  it('leaves real links untouched', async () => {
+    const { renderLanding } = await import('../worker/src/landing.js');
+    const out = renderLanding();
+    expect(out).toContain('href="/verify"');
+    expect(out).toContain('href="#how"');
+  });
+});

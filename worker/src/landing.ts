@@ -63,6 +63,11 @@ export const LANDING_HTML = `<!doctype html>
   .btn.primary:hover{background:#57e6c4}
   .btn.ghost{background:var(--panel);color:var(--text-hi)}
   .btn.ghost:hover{border-color:var(--primary);color:var(--primary)}
+  /* A destination that does not exist yet. Rendered as visibly inert rather
+     than as a link that 404s — see renderLanding(). */
+  .pending{opacity:.42;cursor:not-allowed;text-decoration:none}
+  .pending::after{content:" — soon";font-size:.82em;letter-spacing:.02em}
+  a.pending:hover{transform:none}
   .pills{display:flex;flex-wrap:wrap;gap:8px}
   .pill{font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);
     color:var(--text-mid);background:var(--panel)}
@@ -186,7 +191,7 @@ export const LANDING_HTML = `<!doctype html>
         <div class="src" id="p50-src">Measured from send, not from open</div>
       </div>
       <div class="stat">
-        <div class="v" id="tests">207</div>
+        <div class="v" id="tests">219</div>
         <div class="k">tests, and a ledger you can read</div>
         <div class="src">node scripts/lunker-verify.mjs bench · <a href="/verify" style="color:var(--primary)">/verify</a></div>
       </div>
@@ -259,3 +264,40 @@ export const LANDING_HTML = `<!doctype html>
     });
 </script>
 </body></html>`;
+
+/**
+ * Matches an anchor whose href is still an unfilled placeholder token.
+ *
+ * The delimiters are assembled from code points rather than written literally,
+ * so this line does not itself register as an unfilled token when
+ * `scripts/check-submission-readiness.mjs` walks the tree. A gate that counts
+ * its own machinery is a gate that always reads one short of the truth.
+ */
+const FILL_OPEN = `${String.fromCharCode(0x27e6)}FILL:`;
+const FILL_CLOSE = String.fromCharCode(0x27e7);
+const PENDING_LINK = new RegExp(
+  `<a([^>]*?)href="${FILL_OPEN}[A-Z_]+${FILL_CLOSE}"([^>]*)>([\\s\\S]*?)</a>`,
+  'g',
+);
+
+/**
+ * Serve-time degradation for destinations that do not exist yet.
+ *
+ * The page went public the moment the Worker was deployed, which is weeks
+ * before the store listings, the video and the repo exist. Left alone, the
+ * template's placeholder tokens render as a literal unfilled href,
+ * so every CTA on the page is a dead link to anyone who opens it — including
+ * anyone we hand the URL to early.
+ *
+ * This turns each of those into a visibly inert element instead. It is
+ * deliberately a RENDER-time transform, not an edit to the template: the raw
+ * tokens stay in the source so `check-submission-readiness.mjs` keeps failing
+ * until they are genuinely resolved. A page that hides its own unfinished
+ * state from the gate would be the worse bug.
+ */
+export function renderLanding(html: string = LANDING_HTML): string {
+  return html.replace(PENDING_LINK, (_match, pre: string, post: string, label: string) => {
+    const cls = /class="([^"]*)"/.exec(pre + post)?.[1] ?? '';
+    return `<span class="${cls} pending" aria-disabled="true">${label}</span>`;
+  });
+}
