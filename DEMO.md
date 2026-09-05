@@ -14,13 +14,13 @@ that makes an honest submission look dishonest.
 ## A. The headline number — real telemetry
 
 ```sh
-node scripts/lunker-verify.mjs bench --source remote --url ⟦FILL:WORKER_URL⟧
+node scripts/lunker-verify.mjs bench --source remote --url https://lunker.edycu.workers.dev
 ```
 
 Expected shape (values are whatever the ledger actually holds):
 
 ```
-Source: live ledger ⟦FILL:WORKER_URL⟧
+Source: live ledger https://lunker.edycu.workers.dev
 Rows ingested:              <n>
 Answered within window:     <a> / <d>  (<pct>%)
 Open latency (ms):          p50=<..>  p95=<..>  max=<..>   (n=<..>)
@@ -31,7 +31,7 @@ Never-opened (denominator only): <..>
 ```
 
 The same computation, rendered for a judge with nothing installed:
-**⟦FILL:WORKER_URL⟧/verify** — it imports `computeBench` from
+**https://lunker.edycu.workers.dev/verify** — it imports `computeBench` from
 [`shared/bench.js`](shared/bench.js), which is the same function this CLI runs.
 The page and this output cannot disagree.
 
@@ -127,7 +127,7 @@ other.
 ## Other commands
 
 ```sh
-node scripts/lunker-verify.mjs ledger:tail --url ⟦FILL:WORKER_URL⟧
+node scripts/lunker-verify.mjs ledger:tail --url https://lunker.edycu.workers.dev
 node scripts/lunker-verify.mjs vc:balance --user <app_user_id>
 node scripts/lunker-verify.mjs webhook:verify --file body.json --signature <hex>
 node scripts/lunker-verify.mjs seed:anomalies
@@ -137,7 +137,7 @@ node scripts/lunker-verify.mjs seed:anomalies
 
 ```sh
 npm install
-npm test                                    # 207 tests
+npm test                                    # 219 tests
 npm run seed && git diff --exit-code seed/content            # deterministic
 npm run seed:anomalies && git diff --exit-code seed/         # deterministic
 npm run bench                               # the block above, exactly

@@ -12,12 +12,12 @@ crons = ["*/15 * * * *"]
 [[d1_databases]]
 binding = "DB"
 database_name = "lunker"
-database_id = "⟦FILL:D1_DATABASE_ID⟧"
+database_id = "b8f88c5a-3e3a-4300-83bc-4f4bbf2e0d36"
 migrations_dir = "migrations"
 
 [vars]
-REVENUECAT_PROJECT_ID = "⟦FILL:REVENUECAT_PROJECT_ID⟧"
-ONESIGNAL_APP_ID = "⟦FILL:ONESIGNAL_APP_ID⟧"
+REVENUECAT_PROJECT_ID = "proj694c4173"
+ONESIGNAL_APP_ID = "d0b804d5-37ea-4fac-bfea-60b8b765201e"
 DEV_CAST_ENABLED = "0"
 
 # Secrets are set with `wrangler secret put` and never live in this file:
