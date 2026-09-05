@@ -1,0 +1,63 @@
+{
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "//": "Four profiles, one per thing we actually need to hand someone.",
+
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleDebug"
+      }
+    },
+
+    "preview": {
+      "//": "The APK we sideload onto a real device to record the demo and to prove the push loop. Sideloadable, not a store artifact.",
+      "distribution": "internal",
+      "channel": "preview",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_ONESIGNAL_APP_ID": "d0b804d5-37ea-4fac-bfea-60b8b765201e"
+      }
+    },
+
+    "testers": {
+      "//": "Google Play closed testing. An AAB, because Play will not take an APK for a release track. Same artifact shape as production so the 14-day tester clock runs against what actually ships.",
+      "distribution": "store",
+      "channel": "testers",
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_ONESIGNAL_APP_ID": "d0b804d5-37ea-4fac-bfea-60b8b765201e"
+      }
+    },
+
+    "production": {
+      "//": "Google Play production and the Samsung Galaxy Store. Galaxy accepts this same AAB, which is the whole reason Door A costs no extra build.",
+      "distribution": "store",
+      "channel": "production",
+      "autoIncrement": "versionCode",
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_ONESIGNAL_APP_ID": "d0b804d5-37ea-4fac-bfea-60b8b765201e"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
+      }
+    }
+  }
+}
