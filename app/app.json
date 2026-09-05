@@ -40,7 +40,8 @@
         {
           "mode": "production"
         }
-      ]
+      ],
+      "./plugins/withReleaseSigning"
     ],
     "extra": {
       "workerUrl": "https://lunker.edycu.workers.dev"

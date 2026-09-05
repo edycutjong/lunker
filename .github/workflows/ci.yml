@@ -109,6 +109,30 @@ jobs:
         working-directory: ${{ matrix.package }}
         run: npx tsc --noEmit
 
+      # The bundle gate. `tsc` walks the real filesystem and resolves anything
+      # that is genuinely on disk; Metro has its own resolver rooted at `app/`
+      # and refuses to reach above it. For weeks this repo typechecked green
+      # while the app could not bundle at all — every `../../../shared/*.js`
+      # import failed, which is the lake table, the fish table and the
+      # reel-tension model, i.e. the game. It surfaced only when a release build
+      # was attempted for the first time.
+      #
+      # A green typecheck is not evidence that the app builds. This step is.
+      - name: Bundle (app — the gate tsc cannot be)
+        if: matrix.package == 'app'
+        working-directory: app
+        env:
+          EXPO_PUBLIC_ONESIGNAL_APP_ID: d0b804d5-37ea-4fac-bfea-60b8b765201e
+        run: |
+          npx expo export:embed \
+            --platform android --dev false --entry-file index.js \
+            --bundle-output /tmp/bundle.js --assets-dest /tmp/bundle-assets
+          test -s /tmp/bundle.js
+          # The shared modules must actually be IN the bundle, not merely
+          # resolvable. A bundle that silently dropped them would still be a
+          # file of non-zero size.
+          grep -q 'Moonlight Koi' /tmp/bundle.js
+
   # ── Stage 2 · Determinism ──────────────────────────────────────────────────
   determinism:
     name: Stage 2 · Determinism & bench

@@ -82,6 +82,24 @@ export default tseslint.config(
     },
   },
 
+  // ── Expo config plugins (CommonJS, Node, build-time only) ────────────────
+  // These run on the developer's machine during `expo prebuild`, not on the
+  // device, so they are Node CJS rather than React Native ESM — a distinction
+  // the `app/**` block below would otherwise get wrong.
+  {
+    files: ['app/plugins/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2023,
+      sourceType: 'commonjs',
+      globals: { ...globals.node },
+    },
+    rules: {
+      // A signing config that silently fell back to the debug keystore is the
+      // failure this plugin exists to prevent; it has to be able to say so.
+      'no-console': 'off',
+    },
+  },
+
   // ── Cloudflare Worker (TypeScript, Workers runtime) ──────────────────────
   {
     files: ['worker/src/**/*.ts'],
