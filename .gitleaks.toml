@@ -103,6 +103,20 @@ regexes = [
   # keys; by construction nothing secret and no COIN balance is stored under
   # them — see the file header.
   '''\blunker\.[a-z_]+\.v\d+\b''',
+  # The D1 database id in worker/wrangler.toml. gitleaks' builtin
+  # `cloudflare-d1-database-id` rule fires on it, but a D1 id is an identifier,
+  # not a credential: it names a database and grants nothing. Reaching that
+  # database still requires a Cloudflare API token, which lives in
+  # ~/.config and is one of the four secrets above. Cloudflare's own docs and
+  # templates commit this value to wrangler.toml, and `submission/links.md`
+  # already records it as public alongside REVENUECAT_PROJECT_ID and
+  # ONESIGNAL_APP_ID.
+  #
+  # Allowlisted as an exact literal rather than by path: an allowlist on
+  # `worker/wrangler.toml` would let a genuinely secret value ride into that
+  # file unnoticed, and wrangler.toml is exactly where someone would be tempted
+  # to put one.
+  '''\bb8f88c5a-3e3a-4300-83bc-4f4bbf2e0d36\b''',
 ]
 
 paths = [
