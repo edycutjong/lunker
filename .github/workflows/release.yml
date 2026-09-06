@@ -62,9 +62,23 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+          NEXT="${{ steps.ver.outputs.next }}"
+
+          # Idempotent on purpose. Two pushes can land close enough together
+          # that both runs compute the same version — a fix: commit and an
+          # amended force-push did exactly that on 2026-09-06, and the second
+          # run died on `fatal: tag 'v1.0.1' already exists` after the first had
+          # already tagged and released correctly. That is a red X on a
+          # workflow that did its job, which is worse than useless: it trains
+          # you to ignore the one signal that says a release did not happen.
+          git fetch --tags --quiet
+          if git rev-parse -q --verify "refs/tags/$NEXT" >/dev/null; then
+            echo "$NEXT already exists — another run got there first. Nothing to do."
+            exit 0
+          fi
+
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "${{ steps.ver.outputs.next }}" -m "${{ steps.ver.outputs.next }}"
-          git push origin "${{ steps.ver.outputs.next }}"
-          gh release create "${{ steps.ver.outputs.next }}" \
-            --generate-notes --title "${{ steps.ver.outputs.next }}"
+          git tag -a "$NEXT" -m "$NEXT"
+          git push origin "$NEXT"
+          gh release create "$NEXT" --generate-notes --title "$NEXT"
