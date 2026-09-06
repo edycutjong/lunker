@@ -57,6 +57,28 @@ updates:
       - dependency-name: react-native
       - dependency-name: react
       - dependency-name: 'expo-*'
+      # The list above was not enough. On 2026-09-06 Dependabot raised a grouped
+      # PR that bumped six packages Expo ALSO pins but which are not named
+      # `expo-*`: react-native-screens, react-native-svg,
+      # react-native-safe-area-context, async-storage and typescript. CI went
+      # green — it bundles JS and never runs native codegen — and the native
+      # build then died in
+      # `:react-native-screens:generateCodegenSchemaFromJavaScript` with
+      # "Unknown prop type for accessibilityContainerViewIsModal", because
+      # react-native-screens 4.27 emits a prop React Native 0.79 cannot parse.
+      #
+      # These are community packages, but the SDK owns their versions just as
+      # firmly as it owns react-native's. `npx expo install --check` is the
+      # authority on what belongs here; CI runs it so drift fails loudly rather
+      # than at the next store upload.
+      - dependency-name: react-native-screens
+      - dependency-name: react-native-svg
+      - dependency-name: react-native-safe-area-context
+      - dependency-name: react-native-gesture-handler
+      - dependency-name: react-native-reanimated
+      - dependency-name: '@react-native-async-storage/async-storage'
+      - dependency-name: '@react-native/*'
+      - dependency-name: typescript
       - dependency-name: '*'
         update-types: ['version-update:semver-major']
 
