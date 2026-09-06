@@ -104,6 +104,28 @@ export function computeBench(sent, pings, opts = {}) {
     else byId.set(ping.notification_id, [ping]);
   }
 
+  // Every bite that was SENT is in the denominator, whether or not telemetry
+  // exists for it.
+  //
+  // This used to be derived from the telemetry table alone, which meant a bite
+  // with no ping row simply vanished — no counter, no flag, nothing. The file's
+  // own header calls an inflated answer rate "the single largest free upgrade
+  // available to a dishonest implementation", and this was the door: one
+  // `DELETE FROM bite_telemetry WHERE opened_at IS NULL` turns 17/39 = 43.6%
+  // into 17/27 = 63.0%, and the page reports it with neverOpened: 0 and no
+  // anomaly of any kind. The same gap opens by accident if the batch write in
+  // dispatchBite ever partially fails.
+  //
+  // Seeding from the send log makes an absent telemetry row indistinguishable
+  // from an unopened one, which is what it actually is.
+  let missingTelemetry = 0;
+  for (const id of sentAt.keys()) {
+    if (!byId.has(id)) {
+      byId.set(id, []);
+      missingTelemetry += 1;
+    }
+  }
+
   // --- Pass 2: collapse duplicates, classify each unique id -----------------
   let duplicateIds = 0;
   let duplicateRows = 0;
@@ -143,6 +165,7 @@ export function computeBench(sent, pings, opts = {}) {
     if (latency <= windowMs) answered += 1;
   }
 
+  // byId is now seeded from the send log, so this is the number of bites sent.
   const denominator = byId.size;
   latencies.sort((a, b) => a - b);
 
@@ -160,6 +183,7 @@ export function computeBench(sent, pings, opts = {}) {
     clockSkew,
     fabricated: fabricatedIds.size,
     neverOpened,
+    missingTelemetry,
     windowMs,
   };
 }

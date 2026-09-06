@@ -115,12 +115,22 @@ describe('fixture E1-E4 — the hand-computed expected answer', () => {
 });
 
 describe('the biases the rules exist to prevent', () => {
-  it('E3: dropping never-opened rows would inflate 43.6% to 63.0%', () => {
-    // The exact free upgrade available for deleting inconvenient rows.
+  it('E3: dropping never-opened rows no longer inflates anything', () => {
+    // This test used to assert the inflation as EXPECTED behaviour: deleting
+    // the never-opened telemetry rows moved the headline from 43.6% to 63.0%,
+    // and the suite documented the 19-point swing rather than defending against
+    // it. The denominator was built from the telemetry table, so a bite with no
+    // ping row vanished — the exact "free upgrade available to a dishonest
+    // implementation" the module header warns about, and one SQL DELETE away.
+    //
+    // The denominator now comes from the SEND log, so deleting telemetry cannot
+    // shrink it. The rows reappear as never-opened, which is what they are.
     const withoutNeverOpened = fx.pings.filter((p) => p.opened_at !== null);
     const r = computeBench(fx.sent, withoutNeverOpened, { windowMs: 60_000 });
-    expect(r.denominator).toBe(27);
-    expect(r.answeredPct.toFixed(1)).toBe('63.0');
+    expect(r.denominator).toBe(39);
+    expect(r.answeredPct.toFixed(1)).toBe('43.6');
+    // And the deletion is now visible rather than silent.
+    expect(r.missingTelemetry).toBe(12);
   });
 
   it('E2: clamping negative latency to 0 would move 4 rows into the numerator', () => {
@@ -159,6 +169,25 @@ describe('the biases the rules exist to prevent', () => {
     expect(r.denominator).toBe(39);
     expect(r.answered).toBe(17);
     expect(r.fabricated).toBe(503);
+  });
+});
+
+describe('the denominator cannot be shrunk by deleting telemetry', () => {
+  it('counts a sent bite with no telemetry row as never-opened', () => {
+    const sent = [
+      { notification_id: 'a', sent_at: 1000 },
+      { notification_id: 'b', sent_at: 1000 },
+      { notification_id: 'c', sent_at: 1000 },
+    ];
+    // Only 'a' produced any telemetry at all.
+    const r = computeBench(sent, [{ notification_id: 'a', opened_at: 3000 }], {
+      windowMs: 60_000,
+    });
+    expect(r.denominator).toBe(3);
+    expect(r.answered).toBe(1);
+    expect(r.answeredPct.toFixed(1)).toBe('33.3');
+    expect(r.missingTelemetry).toBe(2);
+    // Deriving from telemetry alone would have reported 1/1 = 100%.
   });
 });
 
