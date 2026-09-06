@@ -156,6 +156,22 @@ describe('POST /player/sync', () => {
     expect((await res.json()).unlocked_lakes).not.toContain('deepsea');
   });
 
+  it('a sync with no current_lake keeps the one on file', async () => {
+    // Boot sends no lake. It used to send a hardcoded 'willow', which reset a
+    // subscriber's Deep Sea selection on every launch — the paid feature
+    // un-selling itself once a day, and the cron resuming free-lake bites.
+    deps.db.raw(
+      "INSERT INTO vc_transactions (idempotency_key, app_user_id, delta, reason, rc_status, created_at) VALUES ('unlock:" +
+        USER +
+        ":quarry', '" +
+        USER +
+        "', -1200, 'lake_unlock', 200, 1)",
+    );
+    await playerSync(postJson('/player/sync', { app_user_id: USER, current_lake: 'quarry' }), deps);
+    const res = await playerSync(postJson('/player/sync', { app_user_id: USER }), deps);
+    expect((await res.json()).current_lake).toBe('quarry');
+  });
+
   it('will not let a player fish a lake they do not hold', async () => {
     // Otherwise the cron dispatches Deep Sea bites — the richest table in the
     // game — to anyone who names it. Same bypass, different door.

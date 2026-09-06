@@ -156,8 +156,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       // is also how the client learns both.
       void api
         .syncPlayer({
+          // Deliberately no `current_lake`. This used to send a hardcoded
+          // 'willow' on every launch, which reset the server's record — so an
+          // Angler's Pass subscriber who chose Deep Sea was quietly moved back
+          // to the free lake, and the cron resumed sending them Willow bites.
+          // The server holds the lake; boot has nothing to tell it.
           app_user_id: appUserId,
-          current_lake: 'willow',
           unlocked_lakes: unlockedLakes,
           push_enabled: pushEnabled,
         })

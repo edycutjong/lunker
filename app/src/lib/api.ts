@@ -137,7 +137,15 @@ export interface SyncResponse {
  */
 export function syncPlayer(input: {
   app_user_id: string;
-  current_lake: string;
+  /**
+   * Omit to leave the server's stored lake alone.
+   *
+   * Boot deliberately omits it. Sending a value here overwrites what the server
+   * has, and boot used to send a hardcoded 'willow' — which reset a
+   * subscriber's Deep Sea selection every launch. Send it only when the player
+   * actually picks a lake.
+   */
+  current_lake?: string;
   unlocked_lakes: string[];
   push_enabled: boolean;
 }): Promise<SyncResponse | null> {

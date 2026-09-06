@@ -34,8 +34,14 @@ export async function playerSync(req: Request, deps: Deps): Promise<Response> {
   const body = (await req.json().catch(() => null)) as Body | null;
   if (!body?.app_user_id) return badRequest('app_user_id is required');
 
-  const currentLake = body.current_lake ?? 'willow';
-  if (!getLake(currentLake)) return badRequest(`unknown lake: ${currentLake}`);
+  // An ABSENT current_lake means "keep whatever you have on file", not "reset to
+  // willow". The client used to send a hardcoded 'willow' on every boot, so a
+  // subscriber who selected Deep Sea had it silently reset to the free lake on
+  // their next launch — the paid feature un-selling itself once a day. The
+  // client no longer sends the field at boot, so the default must not clobber.
+  if (body.current_lake !== undefined && !getLake(body.current_lake)) {
+    return badRequest(`unknown lake: ${body.current_lake}`);
+  }
 
   // `body.unlocked_lakes` is deliberately NOT read.
   //
@@ -61,10 +67,17 @@ export async function playerSync(req: Request, deps: Deps): Promise<Response> {
 
   const previous = await db
     .prepare(
-      'SELECT streak_days, last_active_at, unlocked_lakes FROM players WHERE app_user_id = ?',
+      'SELECT streak_days, last_active_at, unlocked_lakes, current_lake FROM players WHERE app_user_id = ?',
     )
     .bind(body.app_user_id)
-    .first<{ streak_days: number; last_active_at: number | null; unlocked_lakes: string }>();
+    .first<{
+      streak_days: number;
+      last_active_at: number | null;
+      unlocked_lakes: string;
+      current_lake: string | null;
+    }>();
+
+  const currentLake = body.current_lake ?? previous?.current_lake ?? 'willow';
 
   const streak = nextStreak(previous?.last_active_at ?? null, previous?.streak_days ?? 0, ts, tz);
 
