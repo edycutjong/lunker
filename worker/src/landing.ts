@@ -133,7 +133,7 @@ export const LANDING_HTML = `<!doctype html>
       Lunker
     </span>
     <a class="hide" href="#how">How it works</a>
-    <a class="hide" href="⟦FILL:REPO_URL⟧">Code</a>
+    <a class="hide" href="https://github.com/edycutjong/lunker">Code</a>
     <a class="live" href="/verify"><span class="dot"></span>Live ledger</a>
   </nav>
 </div>
@@ -227,7 +227,7 @@ export const LANDING_HTML = `<!doctype html>
 <div class="wrap">
   <footer>
     <span class="sp">Built solo for RevenueCat Shipaton 2026.</span>
-    <a href="⟦FILL:REPO_URL⟧">GitHub</a>
+    <a href="https://github.com/edycutjong/lunker">GitHub</a>
     <a href="/verify">Live ledger</a>
     <a href="⟦FILL:DEVPOST_URL⟧">Devpost</a>
   </footer>

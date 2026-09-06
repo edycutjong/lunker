@@ -26,9 +26,9 @@
 
 **219 tests** · built for RevenueCat Shipaton 2026 — *Keep Them Coming Back* and *Best Game*
 
-[![CI](⟦FILL:REPO_URL⟧/actions/workflows/ci.yml/badge.svg)](⟦FILL:REPO_URL⟧/actions/workflows/ci.yml)
-[![CodeQL](⟦FILL:REPO_URL⟧/actions/workflows/codeql.yml/badge.svg)](⟦FILL:REPO_URL⟧/actions/workflows/codeql.yml)
-[![Security](⟦FILL:REPO_URL⟧/actions/workflows/security.yml/badge.svg)](⟦FILL:REPO_URL⟧/actions/workflows/security.yml)
+[![CI](https://github.com/edycutjong/lunker/actions/workflows/ci.yml/badge.svg)](https://github.com/edycutjong/lunker/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/edycutjong/lunker/actions/workflows/codeql.yml/badge.svg)](https://github.com/edycutjong/lunker/actions/workflows/codeql.yml)
+[![Security](https://github.com/edycutjong/lunker/actions/workflows/security.yml/badge.svg)](https://github.com/edycutjong/lunker/actions/workflows/security.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-3fdbb6.svg)](LICENSE)
 
 </div>
