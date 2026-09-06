@@ -34,14 +34,15 @@ interface Body {
   lake_id?: string;
   notification_id?: string;
   outcome?: 'win' | 'loss';
-  idempotency_key?: string;
+  // `idempotency_key` is deliberately NOT accepted — see the note where the key
+  // is derived. Honouring a client-supplied one was an unlimited-mint bug.
 }
 
 export async function catchResolved(req: Request, deps: Deps): Promise<Response> {
   const body = (await req.json().catch(() => null)) as Body | null;
   if (!body) return badRequest('malformed json');
 
-  const { app_user_id, lake_id, notification_id, outcome, idempotency_key } = body;
+  const { app_user_id, lake_id, notification_id, outcome } = body;
   if (!app_user_id || !lake_id || !notification_id || !outcome) {
     return badRequest('app_user_id, lake_id, notification_id and outcome are required');
   }
@@ -91,14 +92,31 @@ export async function catchResolved(req: Request, deps: Deps): Promise<Response>
     return json({ outcome: 'escaped', catch: null, balance: null });
   }
 
-  const key = idempotency_key || `catch:${notification_id}`;
+  // Derived from the notification, never taken from the body.
+  //
+  // This was the whole economy's soft underbelly. The replay guard below is the
+  // ONLY thing standing between one bite and unlimited COIN, and it matched on
+  // a key the caller supplied. An honest client sends `catch:<nid>` and the
+  // guard works; a client that sends "1", then "2", then "3" gets a fresh
+  // RevenueCat grant every time, for the same fish, for the full fifteen-minute
+  // claim window — using nothing but its own id and its own push.
+  const key = `catch:${notification_id}`;
 
   // Replaying a landed catch must never grant twice. The client retries once on
   // network failure by design, so this path is exercised in normal operation,
   // not just under attack.
+  //
+  // Only SETTLED rows count. A row was previously written even when RevenueCat
+  // failed, and it matched here — so a transient 500 wrote a phantom +COIN row
+  // and the client's retry then returned HTTP 200 `{outcome:'landed'}` with the
+  // currency never granted. The player was told they landed the fish, got
+  // nothing, and the phantom row was rendered on the public /verify ledger as a
+  // real movement.
   const existing = await db
-    .prepare('SELECT delta, rc_status FROM vc_transactions WHERE idempotency_key = ?')
-    .bind(key)
+    .prepare(
+      "SELECT delta, rc_status FROM vc_transactions WHERE idempotency_key = ? AND app_user_id = ? AND reason = 'catch' AND rc_status = 200",
+    )
+    .bind(key, app_user_id)
     .first<{ delta: number; rc_status: number }>();
 
   const result = rollCatch(sent.lake_id, sent.roll_seed);
@@ -110,11 +128,22 @@ export async function catchResolved(req: Request, deps: Deps): Promise<Response>
   const rc = new RevenueCatClient(env.REVENUECAT_SECRET_KEY, env.REVENUECAT_PROJECT_ID);
   const vc = await rc.grantCoins(app_user_id, result.coins);
 
+  // A failed grant is recorded under a distinct per-attempt key so the ledger
+  // keeps the evidence without the row becoming a false "already settled" match
+  // on the retry — see the note on the replay query above.
+  const settled = vc.status === 200;
   await db
     .prepare(
       'INSERT OR IGNORE INTO vc_transactions (idempotency_key, app_user_id, delta, reason, rc_status, created_at) VALUES (?, ?, ?, ?, ?, ?)',
     )
-    .bind(key, app_user_id, result.coins, 'catch', vc.status, now())
+    .bind(
+      settled ? key : `${key}:attempt:${now()}`,
+      app_user_id,
+      result.coins,
+      'catch',
+      vc.status,
+      now(),
+    )
     .run();
 
   if (vc.status !== 200) {

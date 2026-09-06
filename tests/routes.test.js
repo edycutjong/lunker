@@ -298,6 +298,56 @@ describe('POST /spend-coin', () => {
     const [row] = deps.db.raw('SELECT * FROM vc_transactions');
     expect(row.rc_status).toBe(422);
   });
+
+  // The defect: the 422 row above was written under the SETTLED key, and the
+  // replay guard matched on the key alone. One attempt while short of COIN
+  // therefore made the lake unpurchasable forever — the player could grind to
+  // any balance and every retry returned "insufficient_coin" with zero
+  // RevenueCat calls. It was on the demo path.
+  it('a refused spend never blocks a later successful one', async () => {
+    stubFetch({ rcStatus: 422 });
+    const first = await spendCoin(
+      postJson('/spend-coin', { app_user_id: USER, lake_id: 'quarry' }),
+      deps,
+    );
+    expect(first.status).toBe(422);
+
+    stubFetch({ rcStatus: 200 });
+    const second = await spendCoin(
+      postJson('/spend-coin', { app_user_id: USER, lake_id: 'quarry' }),
+      deps,
+    );
+    const body = await second.json();
+    expect(second.status).toBe(200);
+    expect(body.unlocked).toBe(true);
+    expect(body.replayed).toBeUndefined();
+    // The retry must actually reach RevenueCat, not short-circuit on the refusal.
+    expect(calls.some((c) => c.url.includes('api.revenuecat.com'))).toBe(true);
+  });
+
+  // The defect: the idempotency lookup matched on the key alone, so ANY key
+  // already in the ledger with rc_status 200 — a catch the player legitimately
+  // landed, say — returned `unlocked: true` for free. The key is now derived
+  // server-side and the body's value is ignored.
+  it('ignores a client-supplied idempotency key, so a foreign key cannot buy a lake', async () => {
+    deps.db.raw(
+      "INSERT INTO vc_transactions (idempotency_key, app_user_id, delta, reason, rc_status, created_at) VALUES ('catch:someone-elses', '" +
+        USER +
+        "', 30, 'catch', 200, 1)",
+    );
+    const res = await spendCoin(
+      postJson('/spend-coin', {
+        app_user_id: USER,
+        lake_id: 'quarry',
+        idempotency_key: 'catch:someone-elses',
+      }),
+      deps,
+    );
+    const body = await res.json();
+    // Must be a real purchase attempt, not a free replayed unlock.
+    expect(body.replayed).toBeUndefined();
+    expect(calls.some((c) => c.url.includes('api.revenuecat.com'))).toBe(true);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -550,6 +600,86 @@ describe('POST /dev/cast', () => {
       .run();
     const body = await (await devCast(postJson('/dev/cast', { app_user_id: USER }), d)).json();
     expect(body.disclosure).toContain('live server-side roll');
+  });
+});
+
+describe('POST /catch-resolved — the economy cannot be forged', () => {
+  // THE defect. The replay guard was the only thing between one bite and
+  // unlimited COIN, and it matched on a key the caller supplied. An honest
+  // client sends `catch:<nid>`; a client that sends "1", then "2", then "3"
+  // got a fresh RevenueCat grant every time, for the same fish, for the whole
+  // 15-minute claim window — using only its own id and its own push.
+  it('ignores a client-supplied idempotency key, so one bite grants exactly once', async () => {
+    await seedBite(deps.db, { sentAt: NOW });
+    const first = await catchResolved(
+      postJson('/catch-resolved', {
+        app_user_id: USER,
+        lake_id: 'willow',
+        notification_id: NID,
+        outcome: 'win',
+        idempotency_key: 'attacker-1',
+      }),
+      deps,
+    );
+    expect(first.status).toBe(200);
+
+    const second = await catchResolved(
+      postJson('/catch-resolved', {
+        app_user_id: USER,
+        lake_id: 'willow',
+        notification_id: NID,
+        outcome: 'win',
+        idempotency_key: 'attacker-2',
+      }),
+      deps,
+    );
+    const body = await second.json();
+    expect(body.replayed).toBe(true);
+
+    const grants = deps.db.raw(
+      "SELECT * FROM vc_transactions WHERE reason = 'catch' AND rc_status = 200",
+    );
+    expect(grants).toHaveLength(1);
+  });
+
+  // The defect: a row was written even when RevenueCat failed, and it matched
+  // the replay guard. So a transient 500 wrote a phantom +COIN row, and the
+  // client's own retry then returned HTTP 200 {outcome:'landed'} with the
+  // currency never granted — the player told they landed it, holding nothing,
+  // and the phantom row rendered on the public /verify ledger as real.
+  it('a failed grant does not fake a success on the retry', async () => {
+    await seedBite(deps.db, { sentAt: NOW });
+    stubFetch({ rcStatus: 500 });
+    const first = await catchResolved(
+      postJson('/catch-resolved', {
+        app_user_id: USER,
+        lake_id: 'willow',
+        notification_id: NID,
+        outcome: 'win',
+      }),
+      deps,
+    );
+    expect(first.status).toBe(502);
+
+    stubFetch({ rcStatus: 200 });
+    const retry = await catchResolved(
+      postJson('/catch-resolved', {
+        app_user_id: USER,
+        lake_id: 'willow',
+        notification_id: NID,
+        outcome: 'win',
+      }),
+      deps,
+    );
+    const body = await retry.json();
+    expect(retry.status).toBe(200);
+    expect(body.settled).toBe(true);
+    expect(body.replayed).toBeUndefined();
+    // The retry must genuinely settle, not inherit the failed attempt's row.
+    const settled = deps.db.raw(
+      "SELECT * FROM vc_transactions WHERE reason = 'catch' AND rc_status = 200",
+    );
+    expect(settled).toHaveLength(1);
   });
 });
 

@@ -88,7 +88,13 @@ function renderVerify(p: Payload): string {
       (t) => `<tr>
         <td class="num ${t.delta >= 0 ? 'pos' : 'neg'}">${t.delta >= 0 ? '+' : ''}${t.delta.toLocaleString('en-US')}</td>
         <td>${esc(t.reason)}</td>
-        <td class="num">${t.rc_status}${t.rc_status === 422 ? ' <span class="tag">insufficient</span>' : ''}</td>
+        <td class="num">${t.rc_status}${
+          t.rc_status === 422
+            ? ' <span class="tag">insufficient</span>'
+            : t.rc_status !== 200
+              ? ' <span class="tag">not settled</span>'
+              : ''
+        }</td>
         <td class="num dim">${new Date(t.created_at).toISOString().replace('T', ' ').slice(0, 19)}Z</td>
       </tr>`,
     )
