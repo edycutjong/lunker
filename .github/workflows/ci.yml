@@ -109,6 +109,22 @@ jobs:
         working-directory: ${{ matrix.package }}
         run: npx tsc --noEmit
 
+      # Expo owns the versions of react-native AND of the community packages
+      # around it — react-native-screens, -svg, -safe-area-context,
+      # async-storage, typescript. Drift there does not fail typecheck and does
+      # not fail the JS bundle; it fails native codegen, which only runs during
+      # an actual Android build.
+      #
+      # On 2026-09-06 a grouped Dependabot PR bumped six of those, went green
+      # through every gate here, merged, and then broke
+      # `:react-native-screens:generateCodegenSchemaFromJavaScript` on the first
+      # release build after it. `expo install --check` is the authority on which
+      # versions the SDK expects, so it runs here rather than being remembered.
+      - name: Expo SDK dependency alignment (app)
+        if: matrix.package == 'app'
+        working-directory: app
+        run: npx expo install --check
+
       # The bundle gate. `tsc` walks the real filesystem and resolves anything
       # that is genuinely on disk; Metro has its own resolver rooted at `app/`
       # and refuses to reach above it. For weeks this repo typechecked green
