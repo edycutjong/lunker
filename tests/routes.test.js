@@ -507,6 +507,29 @@ describe('GET /verify', () => {
     expect(body.bench.answeredPct).toBe(50);
   });
 
+  // The defect: window_ms went from the query string straight into the headline
+  // statistic. `?window_ms=600000` rendered a 30px "80.0%" where the honest
+  // figure was 20.0%, and `?window_ms=abc` rendered "0.0%" under the label
+  // "Answered within NaNs". This page is the proof a judge is handed, and a
+  // pre-loaded link is a trivial way to make it say something else.
+  it('ignores an out-of-range or non-numeric window', async () => {
+    for (const q of ['?window_ms=600000', '?window_ms=abc', '?window_ms=-1', '?window_ms=0']) {
+      const res = await verify(
+        new Request('https://lunker.test/verify' + q + '&format=json'),
+        deps,
+      );
+      expect((await res.json()).bench.windowMs).toBe(60_000);
+    }
+  });
+
+  it('still honours a sane window', async () => {
+    const res = await verify(
+      new Request('https://lunker.test/verify?window_ms=30000&format=json'),
+      deps,
+    );
+    expect((await res.json()).bench.windowMs).toBe(30_000);
+  });
+
   it('renders HTML for a judge with no install', async () => {
     const res = await verify(new Request('https://lunker.test/verify'), deps);
     expect(res.headers.get('content-type')).toContain('text/html');

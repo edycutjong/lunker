@@ -18,7 +18,17 @@ import { json, html } from '../lib/http.js';
 export async function verify(req: Request, deps: Deps): Promise<Response> {
   const { db } = deps;
   const url = new URL(req.url);
-  const windowMs = Number(url.searchParams.get('window_ms') ?? 60_000);
+  // Clamped, because this page is the proof a judge is handed.
+  //
+  // The value went straight from the query string into the headline statistic,
+  // so `?window_ms=600000` rendered a 30px "80.0%" where the honest figure was
+  // 20.0%, and `?window_ms=abc` rendered "0.0%" under the label "Answered
+  // within NaNs". The unit label does change with it, which is why this is a
+  // clamp and not a removal — but the big number is what gets screenshotted,
+  // and a pre-loaded link is a trivial way to make it say something else.
+  const requested = Number(url.searchParams.get('window_ms') ?? 60_000);
+  const windowMs =
+    Number.isFinite(requested) && requested > 0 && requested <= 300_000 ? requested : 60_000;
 
   const sentRows = await db
     .prepare('SELECT notification_id, sent_at FROM sent')
