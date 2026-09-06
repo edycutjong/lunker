@@ -137,7 +137,7 @@ node scripts/lunker-verify.mjs seed:anomalies
 
 ```sh
 npm install
-npm test                                    # 227 tests
+npm test                                    # 230 tests
 npm run seed && git diff --exit-code seed/content            # deterministic
 npm run seed:anomalies && git diff --exit-code seed/         # deterministic
 npm run bench                               # the block above, exactly
