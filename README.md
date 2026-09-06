@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="docs/assets/icon-512.png" width="112" alt="Lunker">
+<img src="docs/assets/icon-animated.svg" width="112" alt="Lunker">
 
 # Lunker
 
 **The fish bite while your phone is in your pocket.**
 
-<img src="docs/assets/readme-hero.png" width="720" alt="Lunker — a cozy fishing game where the notification is the game">
+<img src="docs/assets/readme-hero-animated.svg" width="720" alt="Lunker — a cozy fishing game where the notification is the game">
 
 [![Google Play](https://img.shields.io/badge/📱_Google-Play-06b6d4?style=for-the-badge)](⟦FILL:PLAY_URL⟧)
 [![Galaxy Store](https://img.shields.io/badge/🌌_Galaxy-Store-1428a0?style=for-the-badge)](⟦FILL:GALAXY_URL⟧)
