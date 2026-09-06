@@ -18,9 +18,28 @@ import Purchases, {
   type PurchasesPackage,
 } from 'react-native-purchases';
 import RevenueCatUI from 'react-native-purchases-ui';
+// Importing this add-on is what teaches `Purchases.configure` that a GALAXY
+// store exists — it augments `ConfigurationsByStore` by declaration merging.
+// Without the import the `store: 'GALAXY'` branch below does not typecheck.
+import { GALAXY_BILLING_MODE } from 'react-native-purchases-store-galaxy';
 
 export const ENTITLEMENT_ANGLERS_PASS = 'anglers_pass';
 export const VC_COIN = 'COIN';
+
+/**
+ * Which store's billing this build talks to.
+ *
+ * The two doors this project ships through settle purchases through completely
+ * different billing stacks: Google Play Billing, and Samsung IAP. RevenueCat
+ * models them as separate apps with separate public keys — a `goog_` key and a
+ * `galx_` key — so the store and the key have to travel together or the SDK
+ * configures against a store the key does not belong to.
+ *
+ * Build-time, not runtime: an APK is distributed through exactly one store, and
+ * that is decided when the artifact is produced. Defaults to Play so a build
+ * that forgets to say anything gets the behaviour it had before Galaxy existed.
+ */
+const STORE = process.env.EXPO_PUBLIC_RC_STORE === 'GALAXY' ? 'GALAXY' : 'PLAY_STORE';
 
 /** 1. Purchases.configure — establishes the RevenueCat customer at app launch. */
 export async function configurePurchases(apiKey: string, appUserId: string): Promise<void> {
@@ -28,6 +47,23 @@ export async function configurePurchases(apiKey: string, appUserId: string): Pro
 
   // appUserID is passed at configure time so there is never a window where an
   // anonymous customer could take a purchase that then has to be transferred.
+  if (STORE === 'GALAXY') {
+    Purchases.configure({
+      apiKey,
+      appUserID: appUserId,
+      store: 'GALAXY',
+      // TEST lets a physical Galaxy device complete the purchase flow without a
+      // real charge. It MUST be PRODUCTION in the artifact that goes to the
+      // store — a TEST build reports purchases that never took any money, which
+      // would make the submission's revenue claims false.
+      galaxyBillingMode:
+        process.env.EXPO_PUBLIC_GALAXY_BILLING_MODE === 'TEST'
+          ? GALAXY_BILLING_MODE.TEST
+          : GALAXY_BILLING_MODE.PRODUCTION,
+    });
+    return;
+  }
+
   Purchases.configure({ apiKey, appUserID: appUserId });
 }
 
