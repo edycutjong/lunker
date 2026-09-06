@@ -82,9 +82,7 @@ export async function playerSync(req: Request, deps: Deps): Promise<Response> {
   const streak = nextStreak(previous?.last_active_at ?? null, previous?.streak_days ?? 0, ts, tz);
 
   // Free lakes, plus every lake this player has a SETTLED coin unlock for.
-  // Entitlement lakes (Deep Sea) are not granted here: the entitlement lives in
-  // RevenueCat and is checked when the lake is entered, not asserted by the
-  // client at sync time.
+  // Entitlement lakes are handled separately below, from the webhook ledger.
   const paid = await db
     .prepare(
       `SELECT idempotency_key FROM vc_transactions
@@ -115,16 +113,35 @@ export async function playerSync(req: Request, deps: Deps): Promise<Response> {
     // Narrowed by the guard rather than by a filter, so `entitlement` is typed.
     if (lake.unlock.type !== 'entitlement') continue;
     const product = lake.unlock.entitlement;
+    // Match the ENTITLEMENT, not the SKU.
+    //
+    // This compared `product_id` — a store SKU — against the entitlement id
+    // `anglers_pass`. Two different namespaces. On Google Play a subscription
+    // SKU commonly carries a base-plan suffix, so the comparison would never
+    // match and the paid lake would stay locked for every paying subscriber,
+    // silently, even with the webhook correctly configured.
+    //
+    // entitlement_ids is a comma-joined list, so it is matched by membership.
+    // product_id is kept as a fallback for events that predate the column and
+    // for the case where the SKU genuinely is the entitlement id.
     const latest = await db
       .prepare(
         `SELECT event_type FROM purchase_events
-         WHERE app_user_id = ? AND product_id = ?
+         WHERE app_user_id = ?
+           AND (
+             product_id = ?
+             OR ',' || COALESCE(entitlement_ids, '') || ',' LIKE '%,' || ? || ',%'
+           )
          ORDER BY verified_at DESC LIMIT 1`,
       )
-      .bind(body.app_user_id, product)
+      .bind(body.app_user_id, product, product)
       .first<{ event_type: string }>();
-    const revoked =
-      !latest || latest.event_type === 'EXPIRATION' || latest.event_type === 'CANCELLATION';
+    // EXPIRATION and REFUND end access. CANCELLATION does NOT: in RevenueCat it
+    // means auto-renew was switched off, and the subscriber keeps the entitlement
+    // until the period actually expires. Revoking on it took a paid lake away
+    // from someone mid-period, and leaving REFUND out let a refunded subscriber
+    // keep it — the two errors pointed in opposite directions.
+    const revoked = !latest || latest.event_type === 'EXPIRATION' || latest.event_type === 'REFUND';
     if (!revoked) entitled.push(lake.id);
   }
 

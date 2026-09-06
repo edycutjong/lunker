@@ -49,49 +49,70 @@ export async function spendCoin(req: Request, deps: Deps): Promise<Response> {
   // being asked to move a single COIN.
   const key = `unlock:${app_user_id}:${lake_id}`;
 
-  // Only a SETTLED row short-circuits, and only this player's, for this reason.
+  // RESERVE BEFORE SPENDING. The primary key is the lock.
   //
-  // A row used to be written for failed spends too, and it was matched here.
-  // That meant one attempt at 840 COIN against a 1,200 COIN lake wrote a 422
-  // row under this exact key — and every later attempt matched it and returned
-  // "insufficient_coin" without calling RevenueCat again. The player could
-  // grind to 3,800 COIN and still never buy the lake. It was unrecoverable, and
-  // it was on the demo path.
-  const existing = await db
+  // Scoping the guard to settled rows closed the free unlock and the permanent
+  // lockout, but not the race: SELECT -> await spendCoins() -> INSERT is
+  // check-then-act across two awaits, so five simultaneous requests all saw no
+  // settled row, all called RevenueCat, and INSERT OR IGNORE dropped four.
+  // That charged the player 6,000 COIN for one 1,200 COIN lake and showed a
+  // single -1,200 row on /verify. A double-tap on a flaky connection is enough,
+  // and this is on the demo path.
+  //
+  // Claiming the row first makes the database the arbiter: exactly one request
+  // wins the INSERT, and only the winner may move currency.
+  const reservation = await db
     .prepare(
-      "SELECT delta, rc_status FROM vc_transactions WHERE idempotency_key = ? AND app_user_id = ? AND reason = 'lake_unlock' AND rc_status = 200",
+      'INSERT OR IGNORE INTO vc_transactions (idempotency_key, app_user_id, delta, reason, rc_status, created_at) VALUES (?, ?, ?, ?, 0, ?)',
     )
-    .bind(key, app_user_id)
-    .first<{ delta: number; rc_status: number }>();
+    .bind(key, app_user_id, -cost, 'lake_unlock', now())
+    .run();
 
-  if (existing) {
-    // Already paid for. Re-charging on a retry is the failure mode that turns a
-    // network blip into a support ticket about stolen currency.
-    return json({ unlocked: true, lake_id, cost, balance: null, replayed: true });
+  if (reservation.meta.changes === 0) {
+    const held = await db
+      .prepare(
+        "SELECT rc_status FROM vc_transactions WHERE idempotency_key = ? AND app_user_id = ? AND reason = 'lake_unlock'",
+      )
+      .bind(key, app_user_id)
+      .first<{ rc_status: number }>();
+
+    // A settled row is a genuine replay — re-charging on a retry is the failure
+    // that turns a network blip into a support ticket about stolen currency.
+    if (held?.rc_status === 200) {
+      return json({ unlocked: true, lake_id, cost, balance: null, replayed: true });
+    }
+    // In flight. Answering "unlocked" here would promise a spend that may fail.
+    return json({ unlocked: false, lake_id, cost, reason: 'in_flight' }, 409);
   }
 
   const rc = new RevenueCatClient(env.REVENUECAT_SECRET_KEY, env.REVENUECAT_PROJECT_ID);
   const vc = await rc.spendCoins(app_user_id, cost);
 
-  // Refusals are still recorded — /verify showing them is a deliberate honesty
-  // signal, and dropping them would hide real failures from the ledger. But
-  // they are recorded under a DISTINCT per-attempt key, because writing them
-  // under the settled key is what made one failed attempt permanent: the replay
-  // guard matched the refusal and never asked RevenueCat again.
-  const settled = vc.status === 200;
-  await db
-    .prepare(
-      'INSERT OR IGNORE INTO vc_transactions (idempotency_key, app_user_id, delta, reason, rc_status, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-    )
-    .bind(
-      settled ? key : `${key}:attempt:${now()}`,
-      app_user_id,
-      -cost,
-      'lake_unlock',
-      vc.status,
-      now(),
-    )
-    .run();
+  if (vc.status === 200) {
+    await db
+      .prepare('UPDATE vc_transactions SET rc_status = ?, created_at = ? WHERE idempotency_key = ?')
+      .bind(vc.status, now(), key)
+      .run();
+  } else {
+    // Release the reservation so a retry can settle. The refusal is kept as
+    // evidence under a RANDOM suffix, not now(): two refusals inside one
+    // millisecond collided under a timestamp and INSERT OR IGNORE dropped one
+    // silently, under-reporting failures on the surface meant to show them.
+    await db.prepare('DELETE FROM vc_transactions WHERE idempotency_key = ?').bind(key).run();
+    await db
+      .prepare(
+        'INSERT OR IGNORE INTO vc_transactions (idempotency_key, app_user_id, delta, reason, rc_status, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+      )
+      .bind(
+        `${key}:attempt:${crypto.randomUUID()}`,
+        app_user_id,
+        -cost,
+        'lake_unlock',
+        vc.status,
+        now(),
+      )
+      .run();
+  }
 
   if (vc.status === 422) {
     return json(

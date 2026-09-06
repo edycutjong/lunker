@@ -1,17 +1,24 @@
 /**
  * OneSignal REST — server-side sends and Journey triggers.
  *
+ * CORRECTED 2026-09-06. This header used to claim the exact opposite of what
+ * the file does: that `sendBite()` was "used ONLY for the deterministic bite
+ * trigger during demo recording", and that `trackEvent()` was "the path
+ * production uses". Both halves were false, in the sponsor's own integration
+ * file, in a public repo, arguing against the project's own KTCB pitch.
+ *
  * Two distinct uses, kept separate on purpose:
  *
- *  1. `sendBite()` — a direct notification. Used ONLY for the deterministic
- *     bite trigger during demo recording (Android push timing is not
- *     deterministic on camera, and the video discloses that the *timing* was
- *     triggered on cue while the *roll* was live).
- *  2. `trackEvent()` — a custom event that a Journey enters on. This is the
- *     path production uses: the Journey owns cadence, quiet hours and
- *     branching, not this file. Driving re-engagement from Journeys rather than
- *     from a cron of raw REST sends is the difference the KTCB criterion asks
- *     about when it says "fundamental OneSignal features".
+ *  1. `sendBite()` — the bite itself, and the production path. `dispatchBite()`
+ *     calls it for every bite the cron `scheduled` handler decides is due, and
+ *     `/dev/cast` also calls it for the deterministic demo trigger. Cadence and
+ *     quiet hours are enforced in `lib/bite.ts`, not by a Journey — the roll
+ *     seed has to reach D1 before the push leaves, and no Journey can write a
+ *     row before it sends.
+ *  2. `trackEvent()` — a custom event (`rare_landed`, `lake_unlocked`) that a
+ *     lifecycle Journey is designed to enter on. Those Journeys are dashboard
+ *     configuration and are not yet created, so today this fires into a
+ *     listener that does not exist. `ARCHITECTURE.md` carries the same status.
  */
 
 const BASE = 'https://api.onesignal.com';

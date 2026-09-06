@@ -752,6 +752,71 @@ describe('POST /catch-resolved — the economy cannot be forged', () => {
   });
 });
 
+describe('concurrency — the reservation is the lock', () => {
+  // Every other test in this suite is sequential, which is why this class of
+  // defect survived. Deriving the idempotency key closed the SEQUENTIAL replay;
+  // it did nothing about N simultaneous requests all reading "no settled row",
+  // all calling RevenueCat, and INSERT OR IGNORE dropping N-1 of them. Eight
+  // parallel POSTs produced eight grants and one ledger row — the mint bounded
+  // only by concurrency, with the mirror ledger under-reporting it.
+  it('eight concurrent claims on one bite grant exactly once', async () => {
+    await seedBite(deps.db, { sentAt: NOW });
+    const fire = () =>
+      catchResolved(
+        postJson('/catch-resolved', {
+          app_user_id: USER,
+          lake_id: 'willow',
+          notification_id: NID,
+          outcome: 'win',
+        }),
+        deps,
+      );
+
+    await Promise.all(Array.from({ length: 8 }, fire));
+
+    const grantCalls = calls.filter(
+      (c) => c.url.includes('api.revenuecat.com') && c.url.includes('virtual_currencies'),
+    );
+    expect(grantCalls).toHaveLength(1);
+
+    const settled = deps.db.raw(
+      "SELECT * FROM vc_transactions WHERE reason = 'catch' AND rc_status = 200",
+    );
+    expect(settled).toHaveLength(1);
+  });
+
+  // The same race on the spend side charged the PLAYER: five concurrent taps
+  // debited 6,000 COIN for one 1,200 COIN lake and showed a single -1,200 row.
+  it('five concurrent unlocks charge exactly once', async () => {
+    const fire = () =>
+      spendCoin(postJson('/spend-coin', { app_user_id: USER, lake_id: 'quarry' }), deps);
+
+    await Promise.all(Array.from({ length: 5 }, fire));
+
+    const spendCalls = calls.filter(
+      (c) => c.url.includes('api.revenuecat.com') && c.url.includes('virtual_currencies'),
+    );
+    expect(spendCalls).toHaveLength(1);
+
+    const settled = deps.db.raw(
+      "SELECT * FROM vc_transactions WHERE reason = 'lake_unlock' AND rc_status = 200",
+    );
+    expect(settled).toHaveLength(1);
+  });
+
+  // The refusal key used now(), so two refusals inside one millisecond collided
+  // and INSERT OR IGNORE dropped one — under-reporting failures on the surface
+  // whose stated job is showing them. The frozen test clock makes this
+  // deterministic, which is exactly why no existing test could see it.
+  it('two refusals in the same millisecond both get recorded', async () => {
+    stubFetch({ rcStatus: 422 });
+    await spendCoin(postJson('/spend-coin', { app_user_id: USER, lake_id: 'quarry' }), deps);
+    await spendCoin(postJson('/spend-coin', { app_user_id: USER, lake_id: 'quarry' }), deps);
+    const refusals = deps.db.raw('SELECT * FROM vc_transactions WHERE rc_status != 200');
+    expect(refusals).toHaveLength(2);
+  });
+});
+
 describe('POST /catch-resolved — the claim window', () => {
   it('refuses to pay for a bite claimed long after it was sent', async () => {
     // Without a ceiling, a modified client can sit on any notification id it

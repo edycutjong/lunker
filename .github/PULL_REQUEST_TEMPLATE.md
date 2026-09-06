@@ -8,7 +8,7 @@
 
 ## Checklist
 
-- [ ] `npm run ci` passes (Prettier, ESLint, 234 tests)
+- [ ] `npm run ci` passes (Prettier, ESLint, 237 tests)
 - [ ] `npm run typecheck` passes (Worker and app)
 - [ ] Tests added or updated, each named after the behaviour or defect it pins
 - [ ] `npm run seed` and `npm run seed:anomalies` leave `seed/` with no diff —

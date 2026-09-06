@@ -36,12 +36,20 @@ const out = execFileSync('npx', ['vitest', 'run', '--reporter=json'], {
 });
 const report = JSON.parse(out.slice(out.indexOf('{')));
 const actual = report.numTotalTests;
+// `testResults` is one entry per FILE. `numTotalTestSuites` counts describe
+// blocks (61 of them), which is not what "across N files" claims.
+const actualFiles = report.testResults.length;
 
-console.log(`\n  real test count: ${actual}\n`);
+console.log(`\n  real: ${actual} tests across ${actualFiles} files\n`);
 
 // Any 3-digit number immediately followed by "tests", or sitting in the landing
 // page's tests stat, is a claim about this value.
 const CLAIM = /(\d{3})\s*tests|id="tests">(\d{3})</g;
+
+// The file count drifted independently: "234 tests across 10 files" passed the
+// check above because only the test number was inspected. Both halves are
+// claims a judge can falsify in one command, so both are gated.
+const FILE_CLAIM = /across (\d+) files/g;
 
 let bad = 0;
 for (const f of SURFACES) {
@@ -51,7 +59,15 @@ for (const f of SURFACES) {
     const claimed = Number(m[1] ?? m[2]);
     const line = text.slice(0, m.index).split('\n').length;
     if (claimed !== actual) {
-      console.log(`  ❌ ${f}:${line} claims ${claimed}`);
+      console.log(`  ❌ ${f}:${line} claims ${claimed} tests`);
+      bad++;
+    }
+  }
+  for (const m of text.matchAll(FILE_CLAIM)) {
+    const claimed = Number(m[1]);
+    const line = text.slice(0, m.index).split('\n').length;
+    if (claimed !== actualFiles) {
+      console.log(`  ❌ ${f}:${line} claims ${claimed} files`);
       bad++;
     }
   }
@@ -59,7 +75,7 @@ for (const f of SURFACES) {
 
 console.log(
   bad === 0
-    ? `  ✅ every surface agrees on ${actual}.\n`
+    ? `  ✅ every surface agrees on ${actual} tests / ${actualFiles} files.\n`
     : `\n  FAIL — ${bad} stale claim(s). Set them all to ${actual}.\n`,
 );
 process.exit(bad === 0 ? 0 : 1);

@@ -8,7 +8,7 @@
  */
 
 import { createRequire } from 'node:module';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -53,8 +53,17 @@ export class FakeD1 {
   constructor() {
     this.db = new DatabaseSync(':memory:');
     this.db.exec('PRAGMA foreign_keys = ON');
-    const migration = readFileSync(resolve(ROOT, 'worker/migrations/0001_init.sql'), 'utf8');
-    this.db.exec(migration);
+    // EVERY migration, in order — not just 0001.
+    //
+    // This hardcoded 0001_init.sql, so the moment a second migration existed the
+    // suite was testing a schema the Worker no longer runs against. Adding
+    // `entitlement_ids` in 0002 failed 40 tests with "no such column", which was
+    // the harness being wrong rather than the code.
+    const dir = resolve(ROOT, 'worker/migrations');
+    for (const file of readdirSync(dir).sort()) {
+      if (!file.endsWith('.sql')) continue;
+      this.db.exec(readFileSync(resolve(dir, file), 'utf8'));
+    }
   }
 
   prepare(sql) {

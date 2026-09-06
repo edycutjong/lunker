@@ -1,0 +1,15 @@
+-- The entitlement a purchase grants, as RevenueCat reports it.
+--
+-- WHY THIS EXISTS
+--
+-- `purchase_events.product_id` holds the STORE SKU. Deep Sea is gated on the
+-- ENTITLEMENT `anglers_pass` (shared/content.js), and player-sync matched the
+-- entitlement id against product_id — two different namespaces that only
+-- coincide by luck. On Google Play a subscription SKU commonly carries a
+-- base-plan suffix (`anglers_pass:monthly`), so the comparison would simply
+-- never match and the paid lake would stay locked for every paying subscriber,
+-- silently, with the webhook correctly configured.
+--
+-- RevenueCat sends `entitlement_ids` on the event. Storing it lets the gate ask
+-- the question it actually means: does this customer hold this entitlement.
+ALTER TABLE purchase_events ADD COLUMN entitlement_ids TEXT;

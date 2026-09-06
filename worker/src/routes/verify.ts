@@ -38,9 +38,20 @@ export async function verify(req: Request, deps: Deps): Promise<Response> {
     .prepare('SELECT notification_id, opened_at, resolved FROM bite_telemetry')
     .all<{ notification_id: string; opened_at: number | null; resolved: string | null }>();
 
+  const refusedRow = await db
+    .prepare('SELECT COUNT(*) AS n FROM vc_transactions WHERE rc_status != 200')
+    .first<{ n: number }>();
+
   const ledger = await db
     .prepare(
-      'SELECT delta, reason, rc_status, created_at FROM vc_transactions ORDER BY created_at DESC LIMIT 25',
+      // SETTLED movements only.
+      //
+      // The tail used to render every row. Refused attempts each get their own
+      // key now, so an attacker could fire 30 doomed /spend-coin requests and
+      // push every real movement off the judge-facing page — the whole table
+      // reading 422, 422, 422. Refusals are still disclosed, as a count below;
+      // they are simply not "movements", which is what this table claims to be.
+      'SELECT delta, reason, rc_status, created_at FROM vc_transactions WHERE rc_status = 200 ORDER BY created_at DESC LIMIT 25',
     )
     .all<{ delta: number; reason: string; rc_status: number; created_at: number }>();
 
@@ -66,6 +77,7 @@ export async function verify(req: Request, deps: Deps): Promise<Response> {
     testers: testers?.n ?? 0,
     purchase_events: purchases?.n ?? 0,
     ledger_tail: ledger.results ?? [],
+    refused: refusedRow?.n ?? 0,
     // Derived, not hardcoded: this page renders identically in local dev, and
     // claiming "production" there would be a small lie on the one surface whose
     // entire job is being checkable.
@@ -85,6 +97,7 @@ interface Payload {
   testers: number;
   purchase_events: number;
   ledger_tail: { delta: number; reason: string; rc_status: number; created_at: number }[];
+  refused: number;
   note: string;
 }
 

@@ -28,6 +28,7 @@ interface RevenueCatEvent {
   app_user_id?: string;
   original_app_user_id?: string;
   product_id?: string;
+  entitlement_ids?: string[];
   price_in_purchased_currency?: number;
   price?: number;
 }
@@ -79,6 +80,11 @@ export async function revenuecatWebhook(req: Request, deps: Deps): Promise<Respo
 
   const appUserId: string = event.app_user_id ?? event.original_app_user_id ?? 'unknown';
   const productId: string = event.product_id ?? 'unknown';
+  // The entitlement the purchase grants. Distinct from the SKU: Deep Sea is
+  // gated on `anglers_pass`, while product_id may be `anglers_pass:monthly`.
+  const entitlementIds: string = Array.isArray(event.entitlement_ids)
+    ? event.entitlement_ids.join(',')
+    : '';
   const revenue: number | null =
     typeof event.price_in_purchased_currency === 'number'
       ? event.price_in_purchased_currency
@@ -88,9 +94,9 @@ export async function revenuecatWebhook(req: Request, deps: Deps): Promise<Respo
 
   await db
     .prepare(
-      'INSERT OR IGNORE INTO purchase_events (event_id, app_user_id, product_id, event_type, revenue_usd, verified_at) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT OR IGNORE INTO purchase_events (event_id, app_user_id, product_id, event_type, revenue_usd, verified_at, entitlement_ids) VALUES (?, ?, ?, ?, ?, ?, ?)',
     )
-    .bind(eventId, appUserId, productId, type, revenue, now())
+    .bind(eventId, appUserId, productId, type, revenue, now(), entitlementIds)
     .run();
 
   return json({ ok: true, event_id: eventId, type });
