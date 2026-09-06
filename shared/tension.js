@@ -32,7 +32,9 @@ export const DEFAULTS = {
 
 /**
  * @typedef {object} TensionState
- * @property {number} t          elapsed seconds
+ * @property {number} t          simulation seconds — clamped, drives physics
+ * @property {number} elapsed    REAL seconds since the window opened — drives
+ *                               the countdown and the escape. See step().
  * @property {number} pos        needle position, 0 (bottom) .. 1 (top)
  * @property {number} vel
  * @property {number} progress   accumulated in-zone seconds
@@ -50,6 +52,9 @@ export function createState(opts = {}) {
   const phase = opts.phase ?? 0;
   return {
     t: 0,
+    // Wall-clock seconds since the window opened. Tracked separately from `t`
+    // because `t` advances by the CLAMPED delta — see step().
+    elapsed: 0,
     pos: 0.5,
     vel: 0,
     progress: 0,
@@ -90,10 +95,25 @@ export function step(s, dt, holding, opts = {}) {
   if (s.status !== 'playing') return s;
 
   // Clamp dt so a backgrounded app that resumes after 20s does not teleport the
-  // needle through the zone and hand out a free landing.
+  // needle through the zone and hand out a free landing. The clamp is correct
+  // for the integrator and WRONG for the countdown, which is why they are now
+  // two different clocks.
   const d = Math.min(Math.max(dt, 0), 0.05);
 
+  // `t` is simulation time: it drives the physics and the zone, and it is
+  // clamped, so a slow frame cannot fling the needle across the bar.
   const t = s.t + d;
+
+  // `elapsed` is real time, and it is what the sixty seconds means.
+  //
+  // The escape check used to read `t`, so on a device dropping frames the
+  // window silently stretched: at 15fps the fish escaped after 80 real seconds,
+  // at 10fps after 120. Backgrounding the app stopped the loop entirely, and
+  // the single huge dt on resume clamped to 0.05 — so a player could background
+  // mid-bite for ten minutes, return, and still hold a full window, then cash it
+  // in inside the 15-minute claim ceiling. The push carries ttl: 60 and the copy
+  // promises "60s before it escapes"; neither was true.
+  const elapsed = s.elapsed + Math.max(dt, 0);
   const accel = (holding ? cfg.pull : -cfg.gravity) - s.vel * cfg.drag;
   let vel = s.vel + accel * d;
   let pos = s.pos + vel * d;
@@ -115,9 +135,9 @@ export function step(s, dt, holding, opts = {}) {
   /** @type {TensionState['status']} */
   let status = 'playing';
   if (progress >= cfg.requiredHold) status = 'landed';
-  else if (t >= cfg.windowSec) status = 'escaped';
+  else if (elapsed >= cfg.windowSec) status = 'escaped';
 
-  return { t, pos, vel, progress, inZone, zoneCenter, status };
+  return { t, elapsed, pos, vel, progress, inZone, zoneCenter, status };
 }
 
 /**
@@ -126,7 +146,8 @@ export function step(s, dt, holding, opts = {}) {
  * @param {typeof DEFAULTS} [cfg]
  */
 export function remaining(s, cfg = DEFAULTS) {
-  return Math.max(0, cfg.windowSec - s.t);
+  // Counts down in real seconds, matching the promise on the push.
+  return Math.max(0, cfg.windowSec - s.elapsed);
 }
 
 /**

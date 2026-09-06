@@ -82,6 +82,40 @@ describe('resolution', () => {
     expect(play(perfect, { dt: 1 / 30 }).status).toBe('landed');
     expect(play(perfect, { dt: 1 / 120 }).status).toBe('landed');
   });
+
+  // The test above could never see the defect it is named for: both deltas sit
+  // UNDER the 0.05 clamp, so nothing was clamped and nothing diverged. The
+  // window used to advance by the clamped delta, so on a device dropping frames
+  // it silently stretched — 80 real seconds at 15fps, 120 at 10fps — while the
+  // push promised 60. This asserts wall-clock, at rates the clamp actually bites.
+  it('the 60-second window is 60 REAL seconds, however slow the device', () => {
+    for (const fps of [60, 30, 15, 10, 5]) {
+      const dt = 1 / fps;
+      let s = createState();
+      let real = 0;
+      // Hold nothing, so the only way out is the window expiring.
+      while (s.status === 'playing' && real < 200) {
+        s = step(s, dt, false);
+        real += dt;
+      }
+      expect(s.status).toBe('escaped');
+      // Escapes within one frame of the real 60s mark, at every frame rate.
+      expect(real).toBeGreaterThanOrEqual(DEFAULTS.windowSec);
+      expect(real).toBeLessThan(DEFAULTS.windowSec + dt + 0.001);
+    }
+  });
+
+  // Backgrounding stops the RAF loop; the single huge delta on resume clamps to
+  // 0.05, so a player could background mid-bite for ten minutes, come back, and
+  // still hold a full window — then cash it in inside the 15-minute claim
+  // ceiling. Real time keeps running whether or not frames do.
+  it('a backgrounded app does not get its window back', () => {
+    let s = createState();
+    s = step(s, 1 / 60, false);
+    // Gone for ten minutes, then one frame on resume.
+    s = step(s, 600, false);
+    expect(s.status).toBe('escaped');
+  });
 });
 
 describe('progress accounting', () => {
@@ -136,8 +170,8 @@ describe('anti-cheat and robustness', () => {
 
 describe('countdown display', () => {
   it('never reports negative time remaining', () => {
-    const s = { ...createState(), t: 999 };
-    expect(remaining(s)).toBe(0);
+    // `remaining` reads wall-clock `elapsed`, not simulation time `t`.
+    expect(remaining({ ...createState(), elapsed: 999 })).toBe(0);
   });
 
   it('formats as m:ss with a stable width', () => {

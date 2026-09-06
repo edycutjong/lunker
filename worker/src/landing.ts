@@ -191,7 +191,7 @@ export const LANDING_HTML = `<!doctype html>
         <div class="src" id="p50-src">Measured from send, not from open</div>
       </div>
       <div class="stat">
-        <div class="v" id="tests">237</div>
+        <div class="v" id="tests">239</div>
         <div class="k">tests, and a ledger you can read</div>
         <div class="src">node scripts/lunker-verify.mjs bench · <a href="/verify" style="color:var(--primary)">/verify</a></div>
       </div>

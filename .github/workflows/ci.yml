@@ -1,6 +1,6 @@
 name: CI
 
-# Stage 1 · Quality        format + lint + 237 tests, on every supported Node
+# Stage 1 · Quality        format + lint + 239 tests, on every supported Node
 # Stage 1 · Types          tsc --noEmit for the Worker and for the Expo app
 # Stage 2 · Determinism    the content seed, the telemetry fixture, the bench output
 # Stage 3 · Readiness      unfilled-placeholder report (advisory until launch)
@@ -58,7 +58,7 @@ jobs:
       - name: Lint (ESLint — Worker, app and shared)
         run: npm run lint
 
-      - name: Tests (237 across 11 files)
+      - name: Tests (239 across 11 files)
         run: npm test
 
       # The stated test count has drifted four times (207/215/219/223), twice
@@ -254,7 +254,7 @@ jobs:
         run: |
           {
             echo '### CI gates'
-            echo '- Quality — Prettier, ESLint, 237 tests on Node 22 and 24'
+            echo '- Quality — Prettier, ESLint, 239 tests on Node 22 and 24'
             echo '- Types — Worker and Expo app both typecheck clean'
             echo '- Determinism — content seed, telemetry fixture, exact bench output'
           } >> "$GITHUB_STEP_SUMMARY"
