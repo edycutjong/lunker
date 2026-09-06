@@ -98,12 +98,17 @@ describe('POST /player/sync', () => {
   it('NEVER erases a paid unlock when a reinstalled client reports only free lakes', async () => {
     // The bug this replaces: a relaunch pushed ['willow','reeds'] and the player
     // who had paid 1,200 COIN for Quarry saw it locked and priced again.
-    await playerSync(
-      postJson('/player/sync', {
-        app_user_id: USER,
-        unlocked_lakes: ['willow', 'reeds', 'quarry'],
-      }),
-      deps,
+    //
+    // The guarantee now comes from the ledger rather than from the client's
+    // word, which is strictly stronger: a reinstalled client does not have to
+    // remember what it owns, and — unlike before — a client that LIES about
+    // owning something gets nothing.
+    deps.db.raw(
+      "INSERT INTO vc_transactions (idempotency_key, app_user_id, delta, reason, rc_status, created_at) VALUES ('unlock:" +
+        USER +
+        ":quarry', '" +
+        USER +
+        "', -1200, 'lake_unlock', 200, 1)",
     );
     const res = await playerSync(
       postJson('/player/sync', { app_user_id: USER, unlocked_lakes: ['willow', 'reeds'] }),
@@ -114,15 +119,53 @@ describe('POST /player/sync', () => {
     expect(row.unlocked_lakes).toContain('quarry');
   });
 
-  it('still adds newly unlocked lakes to the merged set', async () => {
+  it('adds an entitlement lake once the verified webhook says so', async () => {
+    // Deep Sea is the Angler's Pass lake. It used to appear simply because the
+    // client said so. It now appears only when the HMAC-verified webhook ledger
+    // holds a live purchase for the entitlement.
     await playerSync(postJson('/player/sync', { app_user_id: USER }), deps);
-    const res = await playerSync(
+    let res = await playerSync(
       postJson('/player/sync', { app_user_id: USER, unlocked_lakes: ['deepsea'] }),
       deps,
     );
+    expect((await res.json()).unlocked_lakes).not.toContain('deepsea');
+
+    deps.db.raw(
+      "INSERT INTO purchase_events (event_id, app_user_id, product_id, event_type, revenue_usd, verified_at) VALUES ('e1', '" +
+        USER +
+        "', 'anglers_pass', 'INITIAL_PURCHASE', 4.99, 10)",
+    );
+    res = await playerSync(postJson('/player/sync', { app_user_id: USER }), deps);
     const lakes = (await res.json()).unlocked_lakes;
     expect(lakes).toContain('deepsea');
     expect(lakes).toContain('willow');
+  });
+
+  it('revokes an entitlement lake when the subscription expires', async () => {
+    deps.db.raw(
+      "INSERT INTO purchase_events (event_id, app_user_id, product_id, event_type, revenue_usd, verified_at) VALUES ('e1', '" +
+        USER +
+        "', 'anglers_pass', 'INITIAL_PURCHASE', 4.99, 10)",
+    );
+    deps.db.raw(
+      "INSERT INTO purchase_events (event_id, app_user_id, product_id, event_type, revenue_usd, verified_at) VALUES ('e2', '" +
+        USER +
+        "', 'anglers_pass', 'EXPIRATION', 0, 20)",
+    );
+    const res = await playerSync(postJson('/player/sync', { app_user_id: USER }), deps);
+    expect((await res.json()).unlocked_lakes).not.toContain('deepsea');
+  });
+
+  it('will not let a player fish a lake they do not hold', async () => {
+    // Otherwise the cron dispatches Deep Sea bites — the richest table in the
+    // game — to anyone who names it. Same bypass, different door.
+    const res = await playerSync(
+      postJson('/player/sync', { app_user_id: USER, current_lake: 'deepsea' }),
+      deps,
+    );
+    expect((await res.json()).current_lake).toBe('willow');
+    const [row] = deps.db.raw('SELECT current_lake FROM players');
+    expect(row.current_lake).toBe('willow');
   });
 });
 

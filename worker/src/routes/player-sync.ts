@@ -14,7 +14,7 @@
  * a void and call it engagement.
  */
 
-import { getLake } from '../../../shared/content.js';
+import { getLake, LAKES } from '../../../shared/content.js';
 import { nextStreak } from '../lib/streak.js';
 import type { Deps } from '../types.js';
 import { json, badRequest } from '../lib/http.js';
@@ -37,8 +37,21 @@ export async function playerSync(req: Request, deps: Deps): Promise<Response> {
   const currentLake = body.current_lake ?? 'willow';
   if (!getLake(currentLake)) return badRequest(`unknown lake: ${currentLake}`);
 
-  const unlocked = (body.unlocked_lakes ?? ['willow', 'reeds']).filter((l) => getLake(l));
-  if (unlocked.length === 0) unlocked.push('willow');
+  // `body.unlocked_lakes` is deliberately NOT read.
+  //
+  // It used to be, filtered only for lake validity and then unioned into the
+  // server record permanently. So a client could POST
+  // `unlocked_lakes: ["willow","reeds","quarry","deepsea"]` and own the whole
+  // map forever: Quarry without paying its 1,200 COIN, and Deep Sea — the
+  // Angler's Pass lake — without a subscription. The entitlement was checked
+  // only in the app (LakeMapScreen), which is not a place a paywall can live.
+  //
+  // Deep Sea also has the richest table in the game, so the bypass additionally
+  // redirected the cron to dispatch legendary-tier bites.
+  //
+  // Unlocks are now derived from evidence the server holds. This also removes
+  // the reason the union existed: a reinstalled client no longer needs to tell
+  // us what it owns, because the ledger already knows.
 
   const tz = Number.isFinite(body.tz_offset_min) ? Math.trunc(body.tz_offset_min as number) : 0;
   if (tz < -1440 || tz > 1440) return badRequest('tz_offset_min out of range');
@@ -55,13 +68,61 @@ export async function playerSync(req: Request, deps: Deps): Promise<Response> {
 
   const streak = nextStreak(previous?.last_active_at ?? null, previous?.streak_days ?? 0, ts, tz);
 
-  // Union, never replace. A reinstalled client boots with only the free lakes
-  // and would otherwise overwrite the server's record of a lake the player
-  // already paid for — leaving Quarry showing its 1,200 COIN price to someone
-  // who has already bought it.
-  const merged = previous?.unlocked_lakes
-    ? Array.from(new Set([...previous.unlocked_lakes.split(',').filter(Boolean), ...unlocked]))
-    : unlocked;
+  // Free lakes, plus every lake this player has a SETTLED coin unlock for.
+  // Entitlement lakes (Deep Sea) are not granted here: the entitlement lives in
+  // RevenueCat and is checked when the lake is entered, not asserted by the
+  // client at sync time.
+  const paid = await db
+    .prepare(
+      `SELECT idempotency_key FROM vc_transactions
+       WHERE app_user_id = ? AND reason = 'lake_unlock' AND rc_status = 200`,
+    )
+    .bind(body.app_user_id)
+    .all<{ idempotency_key: string }>();
+
+  const purchased = (paid.results ?? [])
+    // Keys are `unlock:<app_user_id>:<lake_id>` — the lake is the last segment.
+    .map((r) => r.idempotency_key.split(':').pop())
+    .filter((l): l is string => !!l && !!getLake(l));
+
+  // Entitlement lakes come from the HMAC-verified webhook ledger, not from the
+  // client and not from an extra RevenueCat round-trip. `purchase_events` is
+  // written only by /webhooks/revenuecat after a signature check, so it is the
+  // strongest evidence the Worker holds. The latest event for the product wins,
+  // so an EXPIRATION or a cancellation revokes access the same way a purchase
+  // grants it.
+  //
+  // NOTE: this makes Deep Sea depend on the RevenueCat webhook being configured
+  // in the dashboard. Until it is, `purchase_events` stays empty and no player
+  // is entitled — which is the correct failure direction, but it does mean the
+  // webhook is now load-bearing for a paid feature, not just for the ledger
+  // display on /verify.
+  const entitled: string[] = [];
+  for (const lake of LAKES) {
+    // Narrowed by the guard rather than by a filter, so `entitlement` is typed.
+    if (lake.unlock.type !== 'entitlement') continue;
+    const product = lake.unlock.entitlement;
+    const latest = await db
+      .prepare(
+        `SELECT event_type FROM purchase_events
+         WHERE app_user_id = ? AND product_id = ?
+         ORDER BY verified_at DESC LIMIT 1`,
+      )
+      .bind(body.app_user_id, product)
+      .first<{ event_type: string }>();
+    const revoked =
+      !latest || latest.event_type === 'EXPIRATION' || latest.event_type === 'CANCELLATION';
+    if (!revoked) entitled.push(lake.id);
+  }
+
+  const free = LAKES.filter((l) => l.unlock.type === 'free').map((l) => l.id);
+  const merged = Array.from(new Set([...free, ...purchased, ...entitled]));
+
+  // The lake the player says they are fishing must be one they actually hold.
+  // Otherwise the cron happily dispatches Deep Sea bites — the richest table in
+  // the game — to anyone who names it, which is the same paywall bypass by a
+  // different door.
+  const effectiveLake = merged.includes(currentLake) ? currentLake : 'willow';
 
   await db
     .prepare(
@@ -77,7 +138,7 @@ export async function playerSync(req: Request, deps: Deps): Promise<Response> {
     )
     .bind(
       body.app_user_id,
-      currentLake,
+      effectiveLake,
       merged.join(','),
       streak,
       body.push_enabled ? 1 : 0,
@@ -91,7 +152,7 @@ export async function playerSync(req: Request, deps: Deps): Promise<Response> {
   return json({
     ok: true,
     app_user_id: body.app_user_id,
-    current_lake: currentLake,
+    current_lake: effectiveLake,
     unlocked_lakes: merged,
     streak_days: streak,
   });

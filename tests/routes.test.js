@@ -525,6 +525,15 @@ describe('GET /verify', () => {
 
 describe('POST /player/sync', () => {
   it('upserts targeting state', async () => {
+    // Quarry has to be genuinely paid for now — claiming it in the body no
+    // longer unlocks it, and an unheld lake cannot be the current one.
+    deps.db.raw(
+      "INSERT INTO vc_transactions (idempotency_key, app_user_id, delta, reason, rc_status, created_at) VALUES ('unlock:" +
+        USER +
+        ":quarry', '" +
+        USER +
+        "', -1200, 'lake_unlock', 200, 1)",
+    );
     await playerSync(
       postJson('/player/sync', {
         app_user_id: USER,
@@ -550,12 +559,49 @@ describe('POST /player/sync', () => {
     expect(row.push_enabled).toBe(0);
   });
 
-  it('drops lake ids that do not exist', async () => {
+  // The defect: `unlocked_lakes` was taken from the body, filtered only for
+  // lake validity, and unioned into the server record permanently. A client
+  // could claim the whole map — Quarry without paying its 1,200 COIN, and Deep
+  // Sea, the Angler's Pass lake, without a subscription. The entitlement was
+  // enforced only in the app, which is not a place a paywall can live. Deep Sea
+  // also has the richest table in the game, so the bypass additionally aimed
+  // the cron at legendary-tier bites.
+  it('ignores client-claimed unlocks, so the map cannot be self-granted', async () => {
     const res = await playerSync(
-      postJson('/player/sync', { app_user_id: USER, unlocked_lakes: ['willow', 'atlantis'] }),
+      postJson('/player/sync', {
+        app_user_id: USER,
+        unlocked_lakes: ['willow', 'reeds', 'quarry', 'deepsea', 'atlantis'],
+      }),
       deps,
     );
-    expect((await res.json()).unlocked_lakes).toEqual(['willow']);
+    const unlocked = (await res.json()).unlocked_lakes;
+    expect(unlocked).toEqual(expect.arrayContaining(['willow', 'reeds']));
+    expect(unlocked).not.toContain('quarry'); // never paid for
+    expect(unlocked).not.toContain('deepsea'); // entitlement, not a client claim
+    expect(unlocked).not.toContain('atlantis'); // not a lake at all
+  });
+
+  it('grants a coin lake only once the spend has actually settled', async () => {
+    // A refused (422) spend must not unlock anything.
+    deps.db.raw(
+      "INSERT INTO vc_transactions (idempotency_key, app_user_id, delta, reason, rc_status, created_at) VALUES ('unlock:" +
+        USER +
+        ":quarry:attempt:1', '" +
+        USER +
+        "', -1200, 'lake_unlock', 422, 1)",
+    );
+    let res = await playerSync(postJson('/player/sync', { app_user_id: USER }), deps);
+    expect((await res.json()).unlocked_lakes).not.toContain('quarry');
+
+    deps.db.raw(
+      "INSERT INTO vc_transactions (idempotency_key, app_user_id, delta, reason, rc_status, created_at) VALUES ('unlock:" +
+        USER +
+        ":quarry', '" +
+        USER +
+        "', -1200, 'lake_unlock', 200, 2)",
+    );
+    res = await playerSync(postJson('/player/sync', { app_user_id: USER }), deps);
+    expect((await res.json()).unlocked_lakes).toContain('quarry');
   });
 
   it('rejects an absurd timezone offset', async () => {

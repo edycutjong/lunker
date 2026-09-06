@@ -24,7 +24,7 @@
 ![RevenueCat](https://img.shields.io/badge/RevenueCat_v10-F25A5A?style=flat)
 ![OneSignal](https://img.shields.io/badge/OneSignal_v5-E54B4D?style=flat&logo=onesignal&logoColor=white)
 
-**223 tests** · built for RevenueCat Shipaton 2026 — *Keep Them Coming Back* and *Best Game*
+**227 tests** · built for RevenueCat Shipaton 2026 — *Keep Them Coming Back* and *Best Game*
 
 [![CI](https://github.com/edycutjong/lunker/actions/workflows/ci.yml/badge.svg)](https://github.com/edycutjong/lunker/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/edycutjong/lunker/actions/workflows/codeql.yml/badge.svg)](https://github.com/edycutjong/lunker/actions/workflows/codeql.yml)
@@ -152,7 +152,7 @@ built around keeping it that way.
 | Format | Prettier | hard — `npm run format:check` |
 | Lint | ESLint 9, one flat config across the Worker, the RN app and shared ESM | hard — `npm run lint` |
 | Types | `tsc --noEmit` on two independent tsconfigs (Workers types, React Native types) | hard, as a matrix |
-| Tests | Vitest, 223 across 11 files, on Node 22 **and** 24 | hard |
+| Tests | Vitest, 227 across 11 files, on Node 22 **and** 24 | hard |
 | Determinism | content seed + telemetry fixture byte-compared; bench output asserted literally | hard |
 | Secrets | gitleaks over the **full git history** and the working tree, with rules for all four secrets | hard |
 | SAST | CodeQL `javascript-typescript`, `security-and-quality` | hard |
@@ -187,7 +187,7 @@ Node **22.5+** — the tests run the real migration against `node:sqlite`.
 ### Installation
 
 ```sh
-npm install && npm test          # 223 tests
+npm install && npm test          # 227 tests
 npm run seed                     # deterministic content seed
 npm run bench                    # the killer-number computation, on fixture data
 
@@ -212,7 +212,7 @@ places it belongs in: [`.env.example`](.env.example).
 
 ## 🧪 Testing & CI
 
-**223 tests**, `npm test`. The ones that matter:
+**227 tests**, `npm test`. The ones that matter:
 
 - **The bench arithmetic**, against a fixture whose right answer (17/39 = 43.6%,
   p50 9,000, p95 104,000) was computed by hand before the code existed. Each of
