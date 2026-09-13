@@ -20,10 +20,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#04171E"
       },
-      "permissions": [
-        "POST_NOTIFICATIONS",
-        "VIBRATE"
-      ],
+      "permissions": ["POST_NOTIFICATIONS", "VIBRATE"],
       "intentFilters": [
         {
           "action": "VIEW",
@@ -33,10 +30,7 @@
               "scheme": "lunker"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ]
     },
