@@ -151,7 +151,6 @@ export const LANDING_HTML = `<!doctype html>
       </p>
       <div class="ctas">
         <a class="btn primary" href="⟦FILL:PLAY_URL⟧">Get it on Google Play</a>
-        <a class="btn ghost" href="⟦FILL:GALAXY_URL⟧">Galaxy Store</a>
         <a class="btn ghost" href="⟦FILL:VIDEO_URL⟧">Watch the 2-min demo</a>
       </div>
       <div class="pills">

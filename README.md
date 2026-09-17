@@ -9,7 +9,6 @@
 <img src="docs/assets/readme-hero-animated.svg" width="720" alt="Lunker — a cozy fishing game where the notification is the game">
 
 [![Google Play](https://img.shields.io/badge/📱_Google-Play-06b6d4?style=for-the-badge)](⟦FILL:PLAY_URL⟧)
-[![Galaxy Store](https://img.shields.io/badge/🌌_Galaxy-Store-1428a0?style=for-the-badge)](⟦FILL:GALAXY_URL⟧)
 [![Demo Video](https://img.shields.io/badge/🎬_2--min-Demo-ef4444?style=for-the-badge)](⟦FILL:VIDEO_URL⟧)
 [![Live Ledger](https://img.shields.io/badge/📡_Live-Ledger-3fdbb6?style=for-the-badge)](https://lunker.edycu.workers.dev/verify)
 [![RevenueCat Shipaton 2026](https://img.shields.io/badge/Devpost-Shipaton_2026-8b5cf6?style=for-the-badge)](https://revenuecat-shipaton-2026.devpost.com/)

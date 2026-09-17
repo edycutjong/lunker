@@ -15,7 +15,7 @@
     },
     "android": {
       "package": "dev.edycu.lunker",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#04171E"
@@ -32,6 +32,12 @@
           ],
           "category": ["BROWSABLE", "DEFAULT"]
         }
+      ],
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "com.samsung.android.iap.permission.BILLING"
       ]
     },
     "plugins": [
