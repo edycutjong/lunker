@@ -6,7 +6,7 @@ that makes an honest submission look dishonest.
 
 | | Claim | Source | Submittable? |
 |---|---|---|---|
-| **A** | "X% of bite pushes answered within 60s" | real closed-testing telemetry | **yes — this is the headline** |
+| **A** | "X% of bite pushes answered within 60s" | real player telemetry from the Play build, via the live ledger | **yes — this is the headline** |
 | **B** | the bench arithmetic is correct | the E1–E4 fixture | **never.** Validation only. |
 
 ---
@@ -43,8 +43,8 @@ The page and this output cannot disagree.
   being defined away.
 - **Unanswered bites are in the denominator.** The telemetry row is written at
   send time with a null open. Ignoring a bite counts against us.
-- **Report the real N.** If closed testing is thin, we publish "47 bites across
-  12 testers over 9 days" rather than a rounder number with a bigger N. A small
+- **Report the real N.** If early launch data is thin, we publish "47 bites
+  across 12 players over 9 days" rather than a rounder number with a bigger N. A small
   honest N outscores a large synthetic one.
 
 ### Honest limitations

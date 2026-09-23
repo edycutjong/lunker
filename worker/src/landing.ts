@@ -245,7 +245,7 @@ export const LANDING_HTML = `<!doctype html>
         pct.textContent = 'no data yet';
         pct.style.fontSize = '22px';
         pct.style.color = 'var(--text-mid)';
-        src.textContent = 'Closed testing has not reported bites yet';
+        src.textContent = 'No bites reported to the live ledger yet';
       } else {
         pct.textContent = b.answeredPct.toFixed(1) + '%';
         src.textContent = 'REAL TELEMETRY · ' + b.answered + '/' + b.denominator +

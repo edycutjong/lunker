@@ -9,7 +9,7 @@
  * them against the RevenueCat dashboard config.
  *
  * This is content, not telemetry. Nothing here ever supplies a number for the
- * killer metric — that comes from real closed-testing data and nothing else.
+ * killer metric — that comes from real player telemetry and nothing else.
  */
 
 import { writeFile, mkdir } from 'node:fs/promises';

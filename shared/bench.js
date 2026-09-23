@@ -42,7 +42,7 @@
 /**
  * Nearest-rank percentile (the method DEMO.md documents).
  *
- * Deliberately NOT interpolated: with the small N a solo closed test produces,
+ * Deliberately NOT interpolated: with the small N an early launch produces,
  * an interpolated p95 invents a latency no device ever reported. Nearest-rank
  * only ever returns a measurement that actually happened.
  *
