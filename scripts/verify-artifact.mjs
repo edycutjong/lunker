@@ -105,8 +105,8 @@ for (const [name, expected, prefix] of inlined) {
 
 // ── 3. Never ship debug signing ────────────────────────────────────────────
 // The Expo template points buildTypes.release at signingConfigs.debug, and a
-// debug-signed release APK installs and runs perfectly. Play and the Galaxy
-// Store both reject it — at upload, which is the expensive place to find out.
+// debug-signed release APK installs and runs perfectly. Play rejects it — at
+// upload, which is the expensive place to find out.
 try {
   const certs = execFileSync('jarsigner', ['-verify', '-verbose:summary', '-certs', target], {
     maxBuffer: 32 * 1024 * 1024,

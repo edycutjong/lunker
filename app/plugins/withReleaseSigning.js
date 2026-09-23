@@ -7,9 +7,9 @@
  * `expo prebuild --clean` deletes it. A signing config hand-edited into
  * `android/app/build.gradle` therefore survives exactly until the next prebuild,
  * and then the release build silently falls back to the DEBUG keystore — which
- * still produces a perfectly valid-looking APK. Google Play and the Samsung
- * Galaxy Store both reject debug-signed artifacts, so the failure surfaces at
- * the store upload, which is the worst possible place to discover it.
+ * still produces a perfectly valid-looking APK. Google Play rejects
+ * debug-signed artifacts, so the failure surfaces at the store upload, which
+ * is the worst possible place to discover it.
  *
  * This plugin re-applies the config on every prebuild, so the generated project
  * is correct by construction rather than by remembering.
@@ -57,8 +57,8 @@ function withReleaseSigning(config) {
     if (!hasCredentials) {
       console.warn(
         '\n⚠️  withReleaseSigning: LUNKER_KEYSTORE_* not set — the release build will be\n' +
-          '   signed with the DEBUG keystore. It will install and run, but Google Play and\n' +
-          '   the Samsung Galaxy Store will both reject it. Source the credentials with:\n' +
+          '   signed with the DEBUG keystore. It will install and run, but Google Play\n' +
+          '   will reject it. Source the credentials with:\n' +
           '     set -a; . ~/.config/lunker/secrets.env; set +a\n',
       );
       return cfg;

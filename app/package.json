@@ -25,7 +25,6 @@
     "react-native": "0.79.6",
     "react-native-onesignal": "^5.5.9",
     "react-native-purchases": "^10.9.0",
-    "react-native-purchases-store-galaxy": "^10.9.0",
     "react-native-purchases-ui": "^10.9.0",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",

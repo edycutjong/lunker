@@ -119,11 +119,11 @@ jobs:
         working-directory: app
         run: npm ci --legacy-peer-deps
 
-      # The APK is the artefact that gets distributed on Google Play and the
-      # Galaxy Store, so its runtime dependency tree is the one where a copyleft
-      # licence would actually be a problem. Advisory: a transitive licence
-      # string is not a reason to block a submission at 2am, but an unnoticed
-      # GPL dependency in a store listing is a real one.
+      # The APK is the artefact that gets distributed on Google Play, so its
+      # runtime dependency tree is the one where a copyleft licence would
+      # actually be a problem. Advisory: a transitive licence string is not a
+      # reason to block a submission at 2am, but an unnoticed GPL dependency in
+      # a store listing is a real one.
       - name: license-checker
         continue-on-error: true
         working-directory: app
