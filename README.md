@@ -153,9 +153,9 @@ built around keeping it that way.
 | Types | `tsc --noEmit` on two independent tsconfigs (Workers types, React Native types) | hard, as a matrix |
 | Tests | Vitest, 239 across 11 files, on Node 22 **and** 24 | hard |
 | Determinism | content seed + telemetry fixture byte-compared; bench output asserted literally | hard |
-| Secrets | gitleaks over the **full git history** and the working tree, with rules for all four secrets | hard |
+| Secrets | gitleaks over the **full git history** and the working tree, with rules for all four secrets · GitHub secret scanning with push protection | hard |
 | SAST | CodeQL `javascript-typescript`, `security-and-quality` | hard |
-| Dependencies | `npm audit` across all three manifests · Dependabot, grouped, no majors | hard |
+| Dependencies | `npm audit` across all three manifests · Dependabot version updates (grouped, no majors) and security updates | hard |
 | Readiness | `npm run readiness` — fails while any unfilled placeholder survives | advisory in CI, **required before submission** |
 
 Two of those are worth a sentence each, because they are the ones that are

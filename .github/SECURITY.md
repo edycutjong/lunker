@@ -87,7 +87,8 @@ latency, never clamped to zero.
 | Secrets, working tree | gitleaks `--no-git` | same workflow |
 | SAST | CodeQL, `javascript-typescript`, `security-and-quality` | `.github/workflows/codeql.yml` |
 | Dependency CVEs | `npm audit` across all three manifests | `.github/workflows/security.yml` |
-| Dependency updates | Dependabot, grouped, no majors | `.github/dependabot.yml` |
+| Dependency updates | Dependabot version updates (grouped, no majors) + security updates | `.github/dependabot.yml`, repo settings |
+| Secrets, on push | GitHub secret scanning with push protection | repo settings |
 | Licences | `license-checker` over the app's runtime tree | `.github/workflows/security.yml` |
 
 The gitleaks job clones with `fetch-depth: 0` on purpose. This repository was
