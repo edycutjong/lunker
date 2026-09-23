@@ -90,9 +90,9 @@ latency, never clamped to zero.
 | Dependency updates | Dependabot, grouped, no majors | `.github/dependabot.yml` |
 | Licences | `license-checker` over the app's runtime tree | `.github/workflows/security.yml` |
 
-The gitleaks job clones with `fetch-depth: 0` on purpose. This repository is
-private during development and public at submission, and the whole history goes
-public with it — a key deleted in a later commit is still a key that ships.
+The gitleaks job clones with `fetch-depth: 0` on purpose. This repository was
+private during development and is public now, and the whole history went public
+with it — a key deleted in a later commit is still a key that ships.
 
 ### Known accepted risk
 

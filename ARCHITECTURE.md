@@ -63,8 +63,8 @@ sequenceDiagram
 
 ## Routes
 
-Seven that carry behaviour, plus three trivial GETs (`/`, `/index.html`, and
-`/health`) served by the same router. `/dev/cast` returns 404 unless
+Seven that carry behaviour, plus four trivial GETs (`/`, `/index.html`,
+`/privacy` and `/health`) served by the same router. `/dev/cast` returns 404 unless
 `DEV_CAST_ENABLED=1`, which it is not in production.
 
 | Route | Purpose | File |
@@ -82,7 +82,10 @@ Plus a `scheduled` cron handler (not a route) that dispatches bites, in
 
 ## Schema
 
-Five tables — [`worker/migrations/0001_init.sql`](worker/migrations/0001_init.sql).
+Five tables — [`worker/migrations/0001_init.sql`](worker/migrations/0001_init.sql),
+plus [`0002_entitlement_ids.sql`](worker/migrations/0002_entitlement_ids.sql),
+which adds `purchase_events.entitlement_ids` so the Deep Sea gate compares
+entitlements to entitlements rather than to a store SKU.
 Each is read by either `/verify` or `bench`; there is no table that exists only
 to exist.
 

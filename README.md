@@ -71,11 +71,11 @@ The loop, in the order the system executes it:
 |---|---|
 | **Mobile client** | React Native 0.79 on Expo 53, TypeScript, React Navigation 7 — `app/` |
 | **Backend** | Cloudflare Workers — 7 routes plus a cron dispatcher, Wrangler 4 — `worker/src/` |
-| **Database** | Cloudflare D1 — 5 tables, one migration: `worker/migrations/0001_init.sql` |
+| **Database** | Cloudflare D1 — 5 tables, two migrations: `worker/migrations/0001_init.sql` + `0002_entitlement_ids.sql` |
 | **Monetization** | RevenueCat — `react-native-purchases` v10 in the client, REST v2 Virtual Currency server-side |
 | **Messaging** | OneSignal — `react-native-onesignal` v5 in the client, REST push from the cron dispatcher |
 | **Shared logic** | Plain ESM imported by both sides — `shared/{bench,content,roll,tension}.js` |
-| **Tests** | Vitest 3 against real SQLite via `node:sqlite` |
+| **Tests** | Vitest 4 against real SQLite via `node:sqlite`, every migration applied in order |
 
 The system as built, route by route and table by table:
 [**ARCHITECTURE.md**](ARCHITECTURE.md).
@@ -161,8 +161,8 @@ built around keeping it that way.
 Two of those are worth a sentence each, because they are the ones that are
 usually decoration:
 
-**The secret scan runs with `fetch-depth: 0`.** This repo is private during the
-build and public at submission, and the whole history goes public with it. A key
+**The secret scan runs with `fetch-depth: 0`.** This repo was private during the
+build and is public now, and the whole history went public with it. A key
 removed in a later commit is still a key that ships, so scanning the tip proves
 nothing. `.gitleaks.toml` carries rules for `ROLL_SERVER_SECRET` specifically —
 GitHub's own scanner knows `sk_`-shaped provider keys but has never heard of that
@@ -221,8 +221,9 @@ places it belongs in: [`.env.example`](.env.example).
   A client-supplied `fish`/`rarity`/`coins` is asserted to be ignored; a replayed
   catch is asserted to call RevenueCat exactly once.
 - **The minigame is actually playable**: a competent policy lands the fish, no
-  input escapes, and holding the whole time also escapes. Frame-rate independent
-  at 30fps and 120fps.
+  input escapes, and holding the whole time also escapes. 30fps and 120fps agree
+  on the outcome, and the 60-second window is 60 *real* seconds at 60, 30, 15,
+  10 and 5fps and across a ten-minute background.
 - **Push copy fits Android's ~65-char pre-ellipsis budget**, so "60s before it
   escapes" is readable without expanding the notification.
 
@@ -232,9 +233,9 @@ Documented because the refusals are decisions, not gaps:
 
 - **No second minigame.** One mechanic done properly beats two done adequately.
 - **No iOS build.** Android only — the scope cutline held.
-- **Not entering Best App for Galaxy**, despite publishing there. That award puts
-  20% of its score on foldable support and Samsung-specific optimization, which
-  we are not building. We publish on Galaxy Store for eligibility and reach.
+- **One store: Google Play.** Lunker ships to Play only, so we are not entering
+  Best App for Galaxy — that award scores foldable support and Samsung-specific
+  optimization, and there is no Galaxy Store build.
 - **No RevenueCat Ads, Web Billing, Experiments, Targeting or Customer Center.**
   All real SDK surfaces, none of them used here, so none of them is claimed.
 - **No offline verification harness.** The judged capability *is* a network
