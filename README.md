@@ -250,6 +250,17 @@ Documented because the refusals are decisions, not gaps:
 
 ## 📝 What we got wrong
 
+**2026-09-26 — the purchase ledger would have refused every real purchase.**
+The webhook check read `x-revenuecat-signature` and hashed the body alone.
+RevenueCat's HMAC signing sends `X-RevenueCat-Webhook-Signature: t=…,v1=…`,
+computed over the timestamp *and* the body, so every real delivery would have
+been a 401 — and the server-side Angler's Pass check reads the table those
+deliveries fill. Every test passed, because the tests signed requests exactly
+the way the code verified them. Found by reading RevenueCat's webhook docs
+against the code, not by a test; the new tests are written in RevenueCat's
+format, with a five-minute replay window
+([`worker/src/lib/webhook.ts`](worker/src/lib/webhook.ts)).
+
 **2026-09-01 — the permission prime didn't prime.** The in-app message was
 triggered and the native Android prompt was fired on the very next line, so both
 appeared at once. That is two prompts simultaneously, not priming, and it spent
