@@ -1,15 +1,16 @@
 /**
- * Two defects found on 2026-09-01, each pinned by the tests named for it.
+ * Defects in SDK initialisation order, each pinned by the tests named for it:
+ * two found on 2026-09-01 and a launch crash plus its siblings on 2026-09-26.
  *
- * Both lived in the primary award's path, and neither was reachable by the rest
- * of the suite: `GameContext.tsx` and `onesignal.ts` import the React Native
+ * All of them lived in the primary award's path, and none was reachable by the
+ * rest of the suite: `GameContext.tsx` and `onesignal.ts` import the React Native
  * runtime, so they cannot be imported into vitest. They are asserted as SOURCE
  * here — the same approach `deeplink.test.js` takes for `App.tsx`, and for the
  * same reason.
  *
  * A source assertion is weaker than a behavioural one and is not pretended to
- * be otherwise. It pins ORDER and DEPENDENCE, which is exactly what both
- * defects were about, and it fails loudly if someone reintroduces either shape.
+ * be otherwise. It pins ORDER and DEPENDENCE, which is exactly what these
+ * defects were about, and it fails loudly if someone reintroduces one of them.
  */
 
 import { describe, it, expect } from 'vitest';
