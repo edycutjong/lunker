@@ -35,7 +35,16 @@ export function initOneSignal(appId: string, externalId: string): void {
   if (__DEV__) OneSignal.Debug.setLogLevel(LogLevel.Verbose);
   OneSignal.initialize(appId);
   OneSignal.login(externalId);
+  initialized = true;
+  for (const attach of pendingAttach.splice(0)) attach();
 }
+
+// The native SDK throws "Must call 'initWithContext' before use" — a FATAL
+// crash on launch in a release build — if a listener is added before
+// initialize(). App.tsx subscribes on first render, while initialize() runs
+// after the async boot in GameContext, so listeners queue until init.
+let initialized = false;
+const pendingAttach: Array<() => void> = [];
 
 /**
  * Whether the OS-level notification permission is actually granted.
@@ -156,8 +165,20 @@ export function onBiteOpened(handler: BiteHandler): () => void {
     if (lakeId && notificationId) handler(String(lakeId), String(notificationId));
   };
 
-  OneSignal.Notifications.addEventListener('click', listener);
-  return () => OneSignal.Notifications.removeEventListener('click', listener);
+  let attached = false;
+  let removed = false;
+  const attach = () => {
+    if (removed) return;
+    OneSignal.Notifications.addEventListener('click', listener);
+    attached = true;
+  };
+  if (initialized) attach();
+  else pendingAttach.push(attach);
+
+  return () => {
+    removed = true;
+    if (attached) OneSignal.Notifications.removeEventListener('click', listener);
+  };
 }
 
 // NOTE: there is deliberately no client-side `trackEvent` here.
