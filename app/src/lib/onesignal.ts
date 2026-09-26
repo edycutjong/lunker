@@ -52,9 +52,24 @@ const pendingAttach: Array<() => void> = [];
  * We report this to the Worker verbatim. Scheduling bites for a player who
  * cannot receive them would inflate the denominator of the killer number with
  * pushes that never had a chance of arriving.
+ *
+ * Asks the native SDK, not the deprecated synchronous `hasPermission()`. That
+ * one returns a JS-side cache that `initialize()` fills ASYNCHRONOUSLY, so a
+ * read made shortly after init could return `false` for a player who had
+ * granted permission — and the boot sync would then write `push_enabled = 0`,
+ * which is exactly the flag the bite cron filters on. The player would stop
+ * receiving bites without anything looking broken.
+ *
+ * Only called after `initOneSignal()`: the boot effect calls it after init, and
+ * the prime path is only reachable once the game is `ready`.
  */
-export function hasPushPermission(): boolean {
-  return OneSignal.Notifications.hasPermission();
+export async function hasPushPermission(): Promise<boolean> {
+  if (!initialized) return false;
+  try {
+    return await OneSignal.Notifications.getPermissionAsync();
+  } catch {
+    return false;
+  }
 }
 
 /** Trigger key the dashboard in-app message is authored against. */
@@ -112,7 +127,14 @@ export function primeThenRequestPush(timeoutMs = PRIME_DISPLAY_TIMEOUT_MS): Prom
       OneSignal.InAppMessages.removeEventListener('willDisplay', onWillDisplay);
       OneSignal.InAppMessages.removeEventListener('didDismiss', onDidDismiss);
       OneSignal.InAppMessages.removeTrigger(PRIME_TRIGGER);
-      resolve(accepted ? await OneSignal.Notifications.requestPermission(true) : false);
+      if (!accepted) return resolve(false);
+      // A rejected native prompt must still settle this promise; otherwise the
+      // caller awaits forever and the player's push state is never synced.
+      try {
+        resolve(await OneSignal.Notifications.requestPermission(true));
+      } catch {
+        resolve(false);
+      }
     };
 
     const timer = setTimeout(() => {

@@ -89,6 +89,14 @@ export async function readCoinBalance({ fresh = false } = {}): Promise<number | 
  * identifiable to a judge who knows the product.
  */
 export async function presentAnglersPassPaywall(): Promise<boolean> {
+  // Every `Purchases.*` promise method checks `isConfigured()` and rejects in
+  // JS. The paywall does not: it goes straight to a native Activity that reads
+  // the Purchases singleton. If configure had failed at boot, that failure
+  // would surface natively rather than as a catchable JS error, so the same
+  // check is made here first.
+  if (!(await Purchases.isConfigured())) {
+    throw new Error('RevenueCat is not configured');
+  }
   await RevenueCatUI.presentPaywallIfNeeded({
     requiredEntitlementIdentifier: ENTITLEMENT_ANGLERS_PASS,
   });
@@ -109,7 +117,12 @@ export async function getCustomerInfo(): Promise<CustomerInfo> {
   return Purchases.getCustomerInfo();
 }
 
-/** Listen for entitlement changes (a trial converting, a subscription expiring). */
+/**
+ * Listen for entitlement changes (a trial converting, a subscription expiring).
+ *
+ * Safe to call before configure(): in react-native-purchases the listener list
+ * is plain JS and no native method is invoked, unlike OneSignal's listeners.
+ */
 export function onCustomerInfoChanged(cb: (info: CustomerInfo) => void): () => void {
   Purchases.addCustomerInfoUpdateListener(cb);
   return () => Purchases.removeCustomerInfoUpdateListener(cb);

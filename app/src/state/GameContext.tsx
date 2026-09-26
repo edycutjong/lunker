@@ -136,7 +136,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         return null;
       });
 
-      const pushEnabled = OS.hasPushPermission();
+      const pushEnabled = await OS.hasPushPermission();
       const balance = await RC.readCoinBalance({ fresh: true }).catch(() => null);
 
       if (cancelled) return;
@@ -263,8 +263,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
        * permanently muted before it has shown anyone why it deserves the slot.
        */
       async primeAndRequestPush() {
-        if (primed.current || OS.hasPushPermission()) return;
+        // Claimed before the await, so two quick catches cannot both prime.
+        if (primed.current) return;
         primed.current = true;
+        if (await OS.hasPushPermission()) return;
 
         // The native prompt fires from the prime's own accept button, inside
         // primeThenRequestPush — not here, and not alongside it.

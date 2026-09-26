@@ -71,7 +71,9 @@ describe('defect: the permission prime fired the native prompt alongside itself'
     // listener, the dismiss listener or the never-displayed timeout.
     const enclosing = onesignal.slice(0, request);
     expect(enclosing).toMatch(/const finish = async \(accepted: boolean\)/);
-    expect(onesignal.slice(request - 120, request)).toMatch(/accepted\s*\?/);
+    expect(onesignal.slice(request - 400, request)).toMatch(
+      /if \(!accepted\) return resolve\(false\);/,
+    );
   });
 
   it('does not fire the native prompt when the prime is dismissed', () => {
@@ -100,5 +102,52 @@ describe('defect: the permission prime fired the native prompt alongside itself'
     // closing note exists to prevent.
     expect(onesignal).not.toMatch(/export async function requestPushPermission/);
     expect(gameContext).not.toMatch(/OS\.triggerPermissionPrime\(/);
+  });
+});
+
+describe('defect: native SDK calls that could run before initialize/configure', () => {
+  // 2026-09-26. The release build crashed on every launch: App.tsx added the
+  // OneSignal click listener on first render, before initialize() ran at the
+  // end of the async boot, and the native SDK threw "Must call
+  // 'initWithContext' before use". These pin that fix and its siblings.
+
+  const app = readFileSync(resolve(ROOT, 'app/App.tsx'), 'utf8');
+  const purchases = readFileSync(resolve(ROOT, 'app/src/lib/purchases.ts'), 'utf8');
+
+  it('never touches the OneSignal SDK directly from App.tsx', () => {
+    expect(app).not.toMatch(/from 'react-native-onesignal'/);
+    expect(app).not.toMatch(/OneSignal\./);
+  });
+
+  it('queues the click listener until initialize() has run', () => {
+    const at = onesignal.indexOf('export function onBiteOpened');
+    const body = onesignal.slice(at);
+    expect(body).toMatch(/if \(initialized\) attach\(\);\s*else pendingAttach\.push\(attach\);/);
+    const init = onesignal.slice(onesignal.indexOf('export function initOneSignal'));
+    const initialize = init.indexOf('OneSignal.initialize(');
+    const flush = init.indexOf('pendingAttach.splice(0)');
+    expect(initialize).toBeGreaterThan(-1);
+    expect(flush).toBeGreaterThan(initialize);
+  });
+
+  it('reads push permission from the native SDK, not the async-filled cache', () => {
+    // `Notifications.hasPermission()` returns a JS cache filled asynchronously
+    // after initialize(); read too early it says false, and the boot sync would
+    // write push_enabled = 0 — the flag the bite cron filters on.
+    expect(onesignal).not.toMatch(/Notifications\.hasPermission\(/);
+    expect(onesignal).toMatch(/Notifications\.getPermissionAsync\(/);
+    expect(gameContext).toMatch(/await OS\.hasPushPermission\(\)/);
+    expect(gameContext.indexOf('OS.hasPushPermission(')).toBeGreaterThan(
+      gameContext.indexOf('OS.initOneSignal('),
+    );
+  });
+
+  it('checks RevenueCat is configured before presenting the native paywall', () => {
+    const at = purchases.indexOf('export async function presentAnglersPassPaywall');
+    const body = purchases.slice(at, at + 800);
+    expect(body.indexOf('Purchases.isConfigured()')).toBeGreaterThan(-1);
+    expect(body.indexOf('Purchases.isConfigured()')).toBeLessThan(
+      body.indexOf('RevenueCatUI.presentPaywallIfNeeded('),
+    );
   });
 });
