@@ -82,8 +82,9 @@ export function LakeMapScreen({
           );
         }
       } catch {
-        // A thrown request (offline, 5xx) used to leave the tap silently dead.
-        Alert.alert('Could not reach the water', 'Check your connection. Nothing was charged.');
+        // A thrown request (offline, or a 5xx such as an upstream refusal) used to
+        // leave the tap silently dead. The cause is not always the connection.
+        Alert.alert('Could not settle that', 'The spend did not go through. Nothing was charged.');
       } finally {
         setBusy(null);
       }

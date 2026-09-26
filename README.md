@@ -251,6 +251,19 @@ Documented because the refusals are decisions, not gaps:
 
 ## 📝 What we got wrong
 
+**2026-09-26 — the Worker never reached RevenueCat or OneSignal.** Both HTTP
+clients defaulted to the global `fetch` and called it as `this.fetchImpl(...)`.
+The Workers runtime rejects that with `TypeError: Illegal invocation`, so every
+bite push from the cron and every COIN grant or spend threw before leaving the
+Worker — which is why OneSignal had sent zero notifications. CI was green
+because the suite stubbed `fetch` with arrow functions, which ignore `this`.
+Worse, a thrown spend escaped after its reservation row was written, so the
+player's retry answered `409 in_flight` forever. Found by tapping a locked lake
+on an emulator and tailing the live Worker. The clients now wrap `fetch`, a
+transport failure takes the normal release-and-502 path, and
+`tests/fetch-binding.test.js` stubs `fetch` with the runtime's own `this` rule
+(all three of its tests fail on the old code).
+
 **2026-09-26 — the release build crashed on every launch.** `App.tsx` subscribed
 to OneSignal notification clicks on first render, but `OneSignal.initialize()`
 ran later, at the end of the async boot. The native SDK throws

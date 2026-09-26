@@ -13,7 +13,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, BackHandler } from 'react-native';
 import * as Linking from 'expo-linking';
 
 import { GameProvider, useGame } from './src/state/GameContext';
@@ -77,6 +77,20 @@ function Root() {
     });
     return () => sub.remove();
   }, [openBite]);
+
+  // Android back: shop and catch return to the water; during a reel it is
+  // swallowed, because leaving mid-fight would forfeit a live 60 s bite. Without
+  // this handler back closed the app from every screen (found on the emulator).
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (screen.name === 'shop' || screen.name === 'catch') {
+        setScreen({ name: 'water' });
+        return true;
+      }
+      return screen.name === 'minigame';
+    });
+    return () => sub.remove();
+  }, [screen.name]);
 
   if (!game.ready) {
     return (

@@ -145,10 +145,14 @@ describe('defect: native SDK calls that could run before initialize/configure', 
 
   it('checks RevenueCat is configured before presenting the native paywall', () => {
     const at = purchases.indexOf('export async function presentAnglersPassPaywall');
-    const body = purchases.slice(at, at + 800);
+    const body = purchases.slice(at, at + 1400);
+    const paywall = body.indexOf('RevenueCatUI.presentPaywallIfNeeded(');
+    expect(paywall).toBeGreaterThan(-1);
     expect(body.indexOf('Purchases.isConfigured()')).toBeGreaterThan(-1);
-    expect(body.indexOf('Purchases.isConfigured()')).toBeLessThan(
-      body.indexOf('RevenueCatUI.presentPaywallIfNeeded('),
-    );
+    expect(body.indexOf('Purchases.isConfigured()')).toBeLessThan(paywall);
+    // No current offering must throw before RevenueCatUI can show its raw
+    // "Error 23" dialog (found on the emulator before products existed).
+    expect(body.indexOf('Purchases.getOfferings()')).toBeGreaterThan(-1);
+    expect(body.indexOf('Purchases.getOfferings()')).toBeLessThan(paywall);
   });
 });

@@ -97,6 +97,11 @@ export async function presentAnglersPassPaywall(): Promise<boolean> {
   if (!(await Purchases.isConfigured())) {
     throw new Error('RevenueCat is not configured');
   }
+  // With no current offering RevenueCatUI shows a raw "Error 23: There is an
+  // issue with your configuration" dialog. Throw instead, so the caller's
+  // "Could not open the store" alert is what the player sees.
+  const offerings = await Purchases.getOfferings();
+  if (!offerings.current) throw new Error('No current offering');
   await RevenueCatUI.presentPaywallIfNeeded({
     requiredEntitlementIdentifier: ENTITLEMENT_ANGLERS_PASS,
   });
