@@ -6,234 +6,603 @@
  * watch two minutes of video and read a description. So this page is not a
  * marketing afterthought, it is where the proof lives.
  *
- * The three proof-strip numbers are fetched LIVE from /verify?format=json
- * rather than typed in. A number that can be edited by hand is a number that
- * eventually drifts from the ledger it claims to summarise. Links that cannot
- * be live (store listings, video) carry unfilled-placeholder tokens, which
+ * The live proof numbers are fetched from /verify?format=json rather than typed
+ * in. A number that can be edited by hand is a number that eventually drifts
+ * from the ledger it claims to summarise. Links that cannot be live (store
+ * listing, video) carry unfilled-placeholder tokens, which
  * `scripts/check-submission-readiness.mjs` fails on — so a half-finished page
  * cannot ship quietly.
+ *
+ * The bite-times card is rendered from the dispatcher's own gate
+ * (`isWithinCadence` in lib/bite.ts) and the committed lake table in
+ * shared/content.js at module load. It is not a picture of the schedule; it is
+ * the schedule, so the page cannot claim an hour the cron would refuse.
+ *
+ * Images, the favicon and the pitch deck are Workers static assets under
+ * `worker/public/` (served at /assets/… and /pitch/). Routes such as /verify
+ * and /privacy are never shadowed: `tests/landing.test.js` asserts that no
+ * file in public/ maps onto a Worker route.
  */
+
+import { LAKES, RARITY_ORDER } from '../../shared/content.js';
+import { isWithinCadence, MIN_BITE_GAP_MS } from './lib/bite.js';
+
+/** Canonical public origin — og:image and og:url must be absolute. */
+export const ORIGIN = 'https://lunker.edycu.workers.dev';
+
+const HOURS = Array.from({ length: 24 }, (_, h) => h);
+const pad = (h: number) => String(h).padStart(2, '0');
+
+/** A lake's biting hours as "08–19", derived from the gate, not restated. */
+function windowLabel(lakeId: string): string {
+  const on = HOURS.filter((h) => isWithinCadence(lakeId, h));
+  if (on.length === 0) return 'never';
+  return `${pad(on[0])}–${pad(on[on.length - 1] + 1)}`;
+}
+
+function unlockLabel(u: (typeof LAKES)[number]['unlock']): string {
+  if (u.type === 'free') return 'free';
+  if (u.type === 'coin') return `${u.cost.toLocaleString('en-US')} COIN`;
+  return 'Angler’s Pass';
+}
+
+function topRarity(lake: (typeof LAKES)[number]): string {
+  let best = 0;
+  for (const f of lake.fish) best = Math.max(best, RARITY_ORDER.indexOf(f.rarity));
+  return RARITY_ORDER[best];
+}
+
+/**
+ * The bite-times table. One row per lake, one cell per local hour. An hour in
+ * which no lake may bite is marked as sleep — computed, not hardcoded, so if
+ * the quiet-hours gate in bite.ts ever moves, this card moves with it.
+ */
+export function renderBiteTimes(): string {
+  const asleep = HOURS.map((h) => LAKES.every((l) => !isWithinCadence(l.id, h)));
+  const head = HOURS.map(
+    (h) => `<span class="hr">${h % 6 === 0 || h === 23 ? pad(h) : ''}</span>`,
+  ).join('');
+  const rows = LAKES.map((lake) => {
+    const cells = HOURS.map((h) => {
+      const cls = isWithinCadence(lake.id, h) ? 'on' : asleep[h] ? 'zz' : 'off';
+      return `<i class="${cls}" title="${lake.name} ${pad(h)}:00"></i>`;
+    }).join('');
+    const [lo, hi] = lake.bites_per_day;
+    return (
+      `<div class="bt-row"><div class="bt-lake"><b>${lake.name}</b>` +
+      `<small>${unlockLabel(lake.unlock)} · ${windowLabel(lake.id)} · ${lo}–${hi} a day · ` +
+      `<span class="r-${topRarity(lake)}">up to ${topRarity(lake)}</span></small></div>` +
+      `<div class="bt-cells" aria-hidden="true">${cells}</div></div>`
+    );
+  }).join('');
+  const gapH = MIN_BITE_GAP_MS / 3_600_000;
+  return (
+    `<div class="bt" role="group" aria-label="Hours in which each lake may bite, local time">` +
+    `<div class="bt-row bt-head" aria-hidden="true"><div></div><div class="bt-cells">${head}</div></div>${rows}</div>` +
+    `<p class="bt-legend"><span><i class="on"></i>may bite</span>` +
+    `<span><i class="zz"></i>asleep — no lake bites</span>` +
+    `<span>never two bites within ${gapH} hour${gapH === 1 ? '' : 's'}</span>` +
+    `<span class="src">rendered from isWithinCadence() · worker/src/lib/bite.ts</span></p>`
+  );
+}
+
+const BITE_TIMES = renderBiteTimes();
 
 export const LANDING_HTML = `<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Lunker — the fish bite while your phone is in your pocket</title>
+<title>Lunker — the lake texts you when a fish is biting</title>
 <meta name="description" content="A cozy fishing game where the notification is the game. Your rod twitches while the app is closed, and you have 60 seconds to answer it.">
-<meta property="og:title" content="Lunker — the fish bite while your phone is in your pocket">
-<meta property="og:description" content="The push notification is not a reminder to play. It is the play.">
+<link rel="canonical" href="${ORIGIN}/">
+<meta name="theme-color" content="#04171E">
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="Lunker">
+<meta property="og:url" content="${ORIGIN}/">
+<meta property="og:title" content="Lunker — the lake texts you when a fish is biting">
+<meta property="og:description" content="The push notification is not a reminder to play. It is the play: 60 seconds to answer it before the fish escapes.">
+<meta property="og:image" content="${ORIGIN}/assets/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Lunker — a lock-screen notification: Your rod is twitching at Willow Lake, 60s before it escapes.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Lunker — the lake texts you when a fish is biting">
+<meta name="twitter:description" content="The push notification is not a reminder to play. It is the play.">
+<meta name="twitter:image" content="${ORIGIN}/assets/og-image.jpg">
+<link rel="icon" type="image/png" href="/assets/favicon-64.png">
+<link rel="apple-touch-icon" href="/assets/icon-256.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:wght@400;500;600;700&family=Martian+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+  /* "night bank at the waterline" — one token set shared with the pitch deck */
   :root{
-    --bg-base:#04171E; --text-hi:#F0FAF6; --text-mid:#94B3AC; --text-low:#47635F;
-    --primary:#3FDBB6; --accent:#FFA05A; --legendary:#C77DFF;
-    --panel:rgba(240,250,246,.045); --line:rgba(240,250,246,.10);
-    --max:1080px;
+    --bg:#04171E; --ink:#F0FAF6; --muted:#94B3AC; --before:#3FDBB6; --after:#FFA05A;
+    --rule:rgba(240,250,246,.10); --legendary:#C77DFF;
+    --font-display:"Instrument Serif","Iowan Old Style",Georgia,serif;
+    --font-body:"Hanken Grotesk","Segoe UI",sans-serif;
+    --font-data:"Martian Mono",ui-monospace,Menlo,monospace;
+    --panel:rgba(240,250,246,.035); --deep:#021016; --max:1200px;
+    color-scheme:dark;
   }
   *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{margin:0;background:var(--bg-base);color:var(--text-hi);
-    font:400 17px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    -webkit-font-smoothing:antialiased;
-    background-image:radial-gradient(900px 520px at 78% -8%, rgba(63,219,182,.10), transparent 62%),
-                     radial-gradient(700px 460px at 12% 8%, rgba(255,160,90,.07), transparent 60%);}
-  .wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
-  a{color:inherit}
+  html{scroll-behavior:smooth;scrollbar-color:#1d4a52 var(--bg)}
+  body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 var(--font-body);
+    -webkit-font-smoothing:antialiased;overflow-x:hidden}
+  ::selection{background:var(--after);color:var(--bg)}
+  a{color:inherit;text-underline-offset:3px}
+  :focus-visible{outline:2px solid var(--after);outline-offset:3px;border-radius:6px}
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 32px}
+  .label{font:500 11.5px/1.4 var(--font-data);letter-spacing:.16em;text-transform:uppercase;
+    color:var(--muted);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .label::before{content:"";width:28px;height:1px;background:var(--after)}
+  h2{font:400 clamp(40px,4.6vw,62px)/1 var(--font-display);letter-spacing:-.015em;margin:14px 0 16px}
+  h2 em{color:var(--after)}
+  .lede{color:var(--muted);font-size:18px;max-width:40em;margin:0}
+  .lede b{color:var(--ink);font-weight:600}
+  code,.mono{font-family:var(--font-data);font-size:.86em}
 
-  nav{display:flex;align-items:center;gap:28px;padding:22px 0;font-size:14.5px}
-  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.01em;margin-right:auto}
-  .brand .hook{width:26px;height:26px;flex:none}
-  nav a{color:var(--text-mid);text-decoration:none;transition:color .18s ease}
-  nav a:hover{color:var(--text-hi)}
-  .live{display:inline-flex;align-items:center;gap:7px;color:var(--primary)!important}
-  .dot{width:7px;height:7px;border-radius:50%;background:var(--primary);animation:pulse 1.9s ease-in-out infinite}
-  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.82)}}
+  /* nav */
+  nav{display:flex;align-items:center;gap:6px;padding:18px 0;font-size:14.5px;color:var(--muted)}
+  nav .brand{display:flex;align-items:center;gap:10px;margin-right:auto;color:var(--ink);
+    font:400 27px/1 var(--font-display);text-decoration:none;padding:4px 6px 4px 0}
+  nav .brand img{width:34px;height:34px;border-radius:9px;transition:transform .25s ease,box-shadow .25s ease}
+  nav .brand{transition:color .18s ease}
+  nav .brand:hover,nav .brand:focus-visible{color:var(--before)}
+  nav .brand:hover img,nav .brand:focus-visible img{transform:rotate(-8deg);box-shadow:0 0 18px -2px rgba(255,160,90,.6)}
+  nav .brand:active img{transform:rotate(-8deg) scale(.94)}
+  nav a:not(.brand):focus-visible,footer a:focus-visible{color:var(--ink);background:rgba(240,250,246,.08);outline-offset:0}
+  summary:focus-visible{color:var(--before);background:rgba(63,219,182,.06);outline-offset:0}
+  nav a:not(.brand){text-decoration:none;padding:8px 11px;border-radius:999px;
+    transition:color .18s ease,background .18s ease}
+  nav a:not(.brand):hover{color:var(--ink);background:rgba(240,250,246,.06)}
+  nav a:not(.brand):active{background:rgba(240,250,246,.12)}
+  nav .live{color:var(--before)}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--before);
+    margin-right:7px;vertical-align:1px;animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.3}}
 
-  header{padding:56px 0 64px;display:grid;grid-template-columns:1.15fr .85fr;gap:56px;align-items:center}
-  .kicker{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:18px}
-  h1{font-size:clamp(34px,5.2vw,58px);line-height:1.04;letter-spacing:-.03em;margin:0 0 20px;font-weight:700}
-  .lede{font-size:18.5px;color:var(--text-mid);margin:0 0 30px;max-width:34em}
-  .lede strong{color:var(--text-hi);font-weight:600}
-  .ctas{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:26px}
-  .btn{display:inline-flex;align-items:center;gap:9px;padding:13px 21px;border-radius:11px;
-    text-decoration:none;font-size:15px;font-weight:600;border:1px solid var(--line);
-    transition:transform .16s ease,background .16s ease,border-color .16s ease}
-  .btn:hover{transform:translateY(-1px)}
-  .btn.primary{background:var(--primary);color:#04171E;border-color:var(--primary)}
-  .btn.primary:hover{background:#57e6c4}
-  .btn.ghost{background:var(--panel);color:var(--text-hi)}
-  .btn.ghost:hover{border-color:var(--primary);color:var(--primary)}
+  /* hero — the lake the page sits on */
+  .lake{position:relative;isolation:isolate;overflow:hidden}
+  .lake::before{content:"";position:absolute;inset:0;z-index:-2;
+    background:radial-gradient(55% 48% at 74% 60%,rgba(63,219,182,.13),transparent 70%),
+      radial-gradient(26% 20% at 88% 4%,rgba(255,160,90,.10),transparent 70%),
+      linear-gradient(180deg,#04171E 0 38%,#052029 64%,#04171E 100%)}
+  .glint{position:absolute;left:min(64%,calc(100% - 250px));top:50%;width:240px;height:340px;z-index:-1;opacity:.5;
+    background:repeating-linear-gradient(180deg,rgba(240,250,246,.2) 0 1px,transparent 1px 11px);
+    -webkit-mask:radial-gradient(50% 50% at 50% 30%,#000,transparent);
+    mask:radial-gradient(50% 50% at 50% 30%,#000,transparent)}
+  .hero{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center;padding:36px 0 72px}
+  h1{font:400 clamp(56px,7.3vw,112px)/.94 var(--font-display);letter-spacing:-.02em;margin:22px 0 26px}
+  h1 em{font-style:italic;background:linear-gradient(90deg,var(--before),var(--after) 85%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;padding-right:.08em}
+  .hero .lede{font-size:18.5px;max-width:34em;margin-bottom:30px}
+  .ctas{display:flex;flex-wrap:wrap;gap:10px}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:13px 20px;border-radius:999px;
+    font:600 15px/1 var(--font-body);text-decoration:none;border:1px solid var(--rule);
+    color:var(--ink);background:var(--panel);
+    transition:transform .18s ease,border-color .18s ease,background .18s ease,color .18s ease}
+  .btn:hover{transform:translateY(-2px);border-color:var(--before);color:var(--before)}
+  .btn:active{transform:translateY(0) scale(.98)}
+  .btn svg{width:17px;height:17px;flex:none}
+  .btn.gh{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .btn.gh:hover{background:#fff;color:var(--bg);border-color:#fff}
+  .btn.primary{background:transparent}
   /* A destination that does not exist yet. Rendered as visibly inert rather
      than as a link that 404s — see renderLanding(). */
-  .pending{opacity:.42;cursor:not-allowed;text-decoration:none}
-  .pending::after{content:" — not live yet";font-size:.82em;letter-spacing:.02em}
-  a.pending:hover{transform:none}
-  .pills{display:flex;flex-wrap:wrap;gap:8px}
-  .pill{font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);
-    color:var(--text-mid);background:var(--panel)}
+  .pending{opacity:.5;cursor:not-allowed;text-decoration:none}
+  .pending::after{content:"· not live yet";font-weight:400;font-size:.84em;letter-spacing:.01em}
+  .btn.pending:hover,.btn.pending:active{transform:none;border-color:var(--rule);color:var(--ink)}
+  .run{margin-top:24px;font:400 12.5px/1.8 var(--font-data);color:var(--muted);display:flex;
+    flex-wrap:wrap;gap:6px 14px;align-items:center}
+  .run code{color:var(--before);border:1px solid var(--rule);padding:5px 10px;border-radius:6px;font-size:12.5px}
 
-  .phone{justify-self:center;width:100%;max-width:300px;aspect-ratio:9/19.5;border-radius:34px;
-    border:1px solid var(--line);background:linear-gradient(178deg,#062731,#04171E 58%);
-    padding:26px 16px;display:flex;flex-direction:column;gap:16px;position:relative;overflow:hidden;
-    box-shadow:0 30px 80px -30px rgba(0,0,0,.85)}
-  .phone::after{content:"";position:absolute;inset:-40% -10% auto;height:60%;
-    background:radial-gradient(closest-side,rgba(63,219,182,.16),transparent);pointer-events:none}
-  .lock-time{text-align:center;font-size:44px;font-weight:700;letter-spacing:-.03em;
-    font-variant-numeric:tabular-nums;margin-top:14px}
-  .lock-date{text-align:center;font-size:12.5px;color:var(--text-mid);margin-top:-8px}
-  .notif{margin-top:auto;background:rgba(240,250,246,.09);border:1px solid var(--line);
-    border-radius:16px;padding:12px 13px;display:flex;gap:11px;backdrop-filter:blur(8px)}
-  .notif .ico{width:30px;height:30px;border-radius:8px;background:var(--accent);flex:none;
-    display:grid;place-items:center;font-size:15px}
-  .notif .t{font-size:12.5px;font-weight:700;margin-bottom:2px}
-  .notif .b{font-size:12.5px;color:var(--text-mid);line-height:1.4}
-  .notif .b em{color:var(--accent);font-style:normal;font-weight:600}
+  /* signature: the lock-screen card floating on the lake */
+  .float{position:relative;height:560px;display:grid;place-items:center}
+  .ripple{position:absolute;left:50%;top:60%;width:440px;height:112px;margin:-56px 0 0 -220px;
+    border:1.5px solid var(--before);border-radius:50%;opacity:0;
+    animation:ripple 4.5s cubic-bezier(.2,.6,.3,1) infinite}
+  .ripple:nth-child(3){animation-delay:1.5s}.ripple:nth-child(4){animation-delay:3s}
+  @keyframes ripple{0%{transform:scale(.25);opacity:.8;border-color:var(--after)}
+    100%{transform:scale(1.9);opacity:0;border-color:var(--before)}}
+  .lockclock{position:absolute;top:30px;left:50%;transform:translateX(-50%);text-align:center;
+    font:400 92px/1 var(--font-display);color:rgba(240,250,246,.92)}
+  .lockclock small{display:block;font:500 13px/1.9 var(--font-body);color:var(--muted);letter-spacing:.04em}
+  .card{position:relative;width:440px;max-width:100%;padding:18px 18px 18px 18px;border-radius:24px;
+    background:rgba(10,40,48,.74);border:1px solid rgba(255,160,90,.38);backdrop-filter:blur(14px);
+    box-shadow:0 40px 80px -30px #000,0 0 60px -10px rgba(255,160,90,.25);display:grid;
+    grid-template-columns:auto 1fr auto;gap:14px;align-items:center;transform:rotate(-3deg);
+    animation:bob 5s ease-in-out infinite}
+  @keyframes bob{50%{transform:rotate(-2deg) translateY(-8px)}}
+  .card img{width:42px;height:42px;border-radius:10px}
+  .card .app{font:500 12.5px/1 var(--font-body);color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between}
+  .card .t{font:600 16px/1.35 var(--font-body)}.card .t em{font-style:normal;color:var(--after)}
+  .ring{--p:100;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;
+    font:500 13px/1 var(--font-data);color:var(--after);
+    background:radial-gradient(closest-side,#0A2830 78%,transparent 80% 100%),
+      conic-gradient(var(--after) calc(var(--p)*1%),rgba(240,250,246,.1) 0)}
+  .caption{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);white-space:nowrap;
+    font:400 12px/1 var(--font-data);color:var(--muted)}
+  .caption b{color:var(--after);font-weight:500}
+  .stagger>*{animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
+  .stagger>*:nth-child(2){animation-delay:.08s}.stagger>*:nth-child(3){animation-delay:.16s}
+  .stagger>*:nth-child(4){animation-delay:.24s}.stagger>*:nth-child(5){animation-delay:.32s}
+  @keyframes rise{from{transform:translateY(16px)}}
 
-  section{padding:64px 0;border-top:1px solid var(--line)}
-  h2{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-mid);
-    font-weight:500;margin:0 0 28px}
-  .proof{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-  .stat{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 22px 18px}
-  .stat .v{font-size:38px;font-weight:700;letter-spacing:-.03em;color:var(--primary);
-    font-variant-numeric:tabular-nums;line-height:1.05}
-  .stat .k{font-size:13.5px;color:var(--text-hi);margin-top:8px;font-weight:500}
-  .stat .src{font-size:11.5px;color:var(--text-low);margin-top:10px;line-height:1.45;
-    text-transform:uppercase;letter-spacing:.055em}
+  section{padding:88px 0;border-top:1px solid var(--rule)}
 
-  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;counter-reset:s}
-  .step{position:relative;padding-top:16px;border-top:2px solid var(--line)}
-  .step::before{counter-increment:s;content:"0" counter(s);position:absolute;top:-11px;left:0;
-    background:var(--bg-base);padding-right:10px;font-size:12px;font-weight:700;color:var(--accent);
-    font-variant-numeric:tabular-nums}
-  .step h3{font-size:17px;margin:0 0 8px;font-weight:600;letter-spacing:-.01em}
-  .step p{font-size:14.5px;color:var(--text-mid);margin:0}
+  /* receipts */
+  #proof{padding:0;border-top:0}
+  .receipts{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--rule);border-radius:20px;
+    background:var(--panel);overflow:hidden}
+  .receipts>div{padding:26px 24px 22px;border-left:1px solid var(--rule)}
+  .receipts>div:first-child{border-left:0}
+  .receipts .v{font:400 60px/1 var(--font-display);color:var(--ink);font-variant-numeric:tabular-nums}
+  .receipts .v small{font-size:.45em;color:var(--muted);margin-left:4px}
+  .receipts .k{font-size:14.5px;margin-top:10px;font-weight:500}
+  .receipts .src{font:400 11px/1.5 var(--font-data);color:var(--muted);margin-top:8px;overflow-wrap:anywhere}
+  .ledger{display:grid;grid-template-columns:1fr 1fr 1.25fr;gap:0;margin-top:14px;border:1px dashed rgba(63,219,182,.28);
+    border-radius:20px;overflow:hidden}
+  .ledger>div{padding:22px 24px;border-left:1px dashed rgba(63,219,182,.2)}
+  .ledger>div:first-child{border-left:0}
+  .ledger .v{font:400 44px/1 var(--font-display);color:var(--before);font-variant-numeric:tabular-nums}
+  .ledger .v.empty{font:400 26px/1.25 var(--font-display);font-style:italic;color:var(--muted)}
+  .ledger .k{font-size:14px;margin-top:8px;font-weight:500}
+  .ledger .src{font:400 11px/1.5 var(--font-data);color:var(--muted);margin-top:8px}
+  .ledger .state{font-size:15px;color:var(--muted);display:flex;flex-direction:column;justify-content:center;gap:10px}
+  .ledger .state b{color:var(--ink);font-weight:600}
+  .ledger .state a{color:var(--before)}
 
-  footer{padding:40px 0 56px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;
-    gap:8px 26px;align-items:center;font-size:14px;color:var(--text-mid)}
-  footer a{color:var(--text-mid);text-decoration:none;transition:color .18s ease}
-  footer a:hover{color:var(--primary)}
-  footer .sp{margin-right:auto}
+  /* demo pair */
+  .pair{display:grid;grid-template-columns:420px minmax(0,1fr);gap:64px;align-items:center}
+  .pair>div{min-width:0}
+  .phones{position:relative;height:620px}
+  .phones img{position:absolute;width:290px;border-radius:30px;border:1px solid var(--rule);
+    box-shadow:0 40px 70px -30px #000}
+  .phones .back{left:130px;top:0;transform:rotate(5deg);opacity:.85}
+  .phones .front{left:0;top:40px;transform:rotate(-2deg)}
+  .phones .tag{position:absolute;font:500 11.5px/1.3 var(--font-data);padding:7px 10px;border-radius:8px;
+    background:var(--deep);border:1px solid var(--rule)}
+  .phones .t1{left:-6px;top:150px;color:var(--before)}.phones .t2{left:300px;top:44px;color:var(--after)}
+  .term{margin-top:26px;border-radius:14px;background:var(--deep);border:1px solid var(--rule);overflow:hidden}
+  .term .bar{display:flex;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid var(--rule);
+    font:400 11.5px/1.4 var(--font-data);color:var(--muted)}
+  .term pre{margin:0;padding:20px 22px;font:400 13px/1.75 var(--font-data);color:var(--muted);
+    white-space:pre-wrap;overflow-wrap:anywhere;min-height:220px}
+  .term .k{color:var(--before)}.term .s{color:var(--ink)}.term .hot{color:var(--after)}
+  .caret{display:inline-block;width:8px;height:15px;background:var(--before);vertical-align:-2px;animation:pulse 1s steps(2) infinite}
+  .srcline{font:400 11.5px/1.6 var(--font-data);color:var(--muted);margin-top:12px}
+  .srcline a{color:var(--before)}
 
-  @media(max-width:860px){
-    header{grid-template-columns:1fr;gap:44px;padding:36px 0 48px}
-    .proof,.steps{grid-template-columns:1fr}
-    nav{gap:18px;flex-wrap:wrap}
-    nav .hide{display:none}
+  /* bento */
+  .bento{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-top:40px}
+  .cell{position:relative;background:var(--panel);border:1px solid var(--rule);border-radius:20px;padding:26px;
+    transition:border-color .2s ease,transform .2s ease}
+  .cell:hover{border-color:rgba(63,219,182,.4)}
+  .cell h3{font:400 30px/1.05 var(--font-display);margin:14px 0 10px}
+  .cell p{margin:0;color:var(--muted);font-size:15.5px}
+  .cell p b{color:var(--ink);font-weight:600}
+  .ico{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;
+    background:rgba(63,219,182,.08);border:1px solid rgba(63,219,182,.22)}
+  .ico svg{width:22px;height:22px}
+  .chip{display:inline-block;margin-top:16px;font:400 11.5px/1.3 var(--font-data);color:var(--before);
+    border:1px solid rgba(63,219,182,.28);padding:6px 9px;border-radius:7px}
+  .chip+.chip{margin-left:6px}
+  .c-times{grid-column:span 4;grid-row:span 2}
+  .c-timer,.c-seed{grid-column:span 2}
+  .c-coin{grid-column:span 3}
+  .c-lakes{grid-column:span 3;display:grid;grid-template-columns:1fr 150px;gap:20px;align-items:end}
+  .c-lakes img{width:150px;border-radius:16px;border:1px solid var(--rule);display:block}
+  .c-times h3{font-size:40px}
+  .bt{margin-top:26px;display:grid;gap:10px}
+  .bt-row{display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px;align-items:center}
+  .bt-lake b{display:block;font:400 22px/1.1 var(--font-display)}
+  .bt-lake small{display:block;font:400 10.5px/1.55 var(--font-data);color:var(--muted);margin-top:3px}
+  .r-common{color:var(--muted)}.r-uncommon{color:var(--before)}.r-rare{color:var(--after)}.r-legendary{color:var(--legendary)}
+  .bt-cells{display:grid;grid-template-columns:repeat(24,1fr);gap:3px}
+  .bt-cells i{height:34px;border-radius:4px;background:rgba(240,250,246,.05)}
+  .bt-cells i.on{background:var(--before);box-shadow:0 0 14px -4px rgba(63,219,182,.7)}
+  .bt-cells i.zz{background:repeating-linear-gradient(45deg,rgba(240,250,246,.09) 0 2px,transparent 2px 6px)}
+  .bt-head .bt-cells{align-items:end}
+  .hr{font:400 10.5px/1 var(--font-data);color:var(--muted)}
+  .cell .bt-legend{display:flex;flex-wrap:wrap;gap:8px 20px;margin:18px 0 0;font:400 11.5px/1.5 var(--font-data);color:var(--muted)}
+  .bt-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:7px}
+  .bt-legend i.on{background:var(--before)}
+  .bt-legend i.zz{background:repeating-linear-gradient(45deg,rgba(240,250,246,.3) 0 2px,transparent 2px 5px)}
+  .bt-legend .src{flex-basis:100%;color:#6f8e88}
+
+  /* honest by design */
+  .quotes{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:16px;margin-top:40px}
+  blockquote{margin:0;padding:28px 26px;border-radius:20px;border:1px solid var(--rule);background:var(--panel)}
+  blockquote p{margin:0;font:400 italic 24px/1.3 var(--font-display);color:var(--ink)}
+  blockquote code{font-style:normal;color:var(--before)}
+  blockquote cite{display:block;margin-top:16px;font:400 11px/1.5 var(--font-data);font-style:normal;color:var(--muted)}
+  blockquote:first-child{border-color:rgba(255,160,90,.35)}
+
+  /* faq */
+  .faq{margin-top:36px;border-top:1px solid var(--rule)}
+  details{border-bottom:1px solid var(--rule)}
+  summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;gap:24px;align-items:center;
+    padding:22px 4px;font:400 26px/1.2 var(--font-display);transition:color .18s ease}
+  summary::-webkit-details-marker{display:none}
+  summary:hover{color:var(--before)}
+  summary::after{content:"+";font:400 22px/1 var(--font-data);color:var(--after);transition:transform .2s ease}
+  details[open] summary::after{transform:rotate(45deg)}
+  details p{margin:0 0 24px;padding:0 4px;color:var(--muted);max-width:62ch}
+  details p b{color:var(--ink);font-weight:600}
+  details a{color:var(--before)}
+
+  footer{padding:40px 0 56px;border-top:1px solid var(--rule);display:flex;flex-wrap:wrap;
+    gap:6px 8px;align-items:center;font-size:14px;color:var(--muted)}
+  footer .sp{margin-right:auto;display:flex;align-items:center;gap:10px}
+  footer .sp img{width:26px;height:26px;border-radius:7px}
+  footer a{color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:999px;
+    transition:color .18s ease,background .18s ease}
+  footer a:hover{color:var(--ink);background:rgba(240,250,246,.06)}
+  footer a:active{background:rgba(240,250,246,.12)}
+
+  @media (max-width:980px){
+    .hero,.pair{grid-template-columns:minmax(0,1fr)}
+    .float{height:470px}
+    .receipts{grid-template-columns:1fr 1fr}
+    .receipts>div:nth-child(3){border-left:0}
+    .receipts>div:nth-child(n+3){border-top:1px solid var(--rule)}
+    .ledger{grid-template-columns:1fr 1fr}
+    .ledger .state{grid-column:1/-1;border-left:0;border-top:1px dashed rgba(63,219,182,.2)}
+    .bento{grid-template-columns:minmax(0,1fr)}
+    .bento>.cell{grid-column:auto;grid-row:auto}
+    .quotes{grid-template-columns:minmax(0,1fr)}
+    .phones{height:560px;max-width:420px}
   }
+  @media (max-width:640px){
+    .wrap{padding:0 16px}
+    nav .hide{display:none}
+    section{padding:64px 0}
+    .float{height:400px}
+    .lockclock{font-size:64px;top:10px}
+    .card{width:100%;grid-template-columns:auto 1fr;transform:rotate(-2deg)}
+    .card .ring{grid-column:1/-1;justify-self:end;margin-top:-6px}
+    .ripple{width:320px;margin-left:-160px}
+    .caption{white-space:normal;text-align:center;width:100%}
+    .receipts .v{font-size:46px}
+    .phones{height:540px}
+    .receipts{grid-template-columns:minmax(0,1fr)}
+    .receipts>div{border-left:0!important;border-top:1px solid var(--rule)}
+    .receipts>div:first-child{border-top:0}
+    .ledger{grid-template-columns:minmax(0,1fr)}
+    .ledger>div{border-left:0!important;border-top:1px dashed rgba(63,219,182,.2)}
+    .ledger>div:first-child{border-top:0}
+    .phones img{width:220px;border-radius:24px}
+    .phones .back{left:100px}.phones .t2{left:auto;right:0;top:10px}
+    .bt-row{grid-template-columns:minmax(0,1fr);gap:6px}
+    .bt-head>div:first-child{display:none}
+    .bt-cells i{height:24px}
+    .c-lakes{grid-template-columns:1fr}
+    summary{font-size:22px}
+  }
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head><body>
 
+<div class="lake"><div class="glint" aria-hidden="true"></div>
 <div class="wrap">
-  <nav>
-    <span class="brand">
-      <svg class="hook" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M12 3v8a5 5 0 1 1-5 5" stroke="#3FDBB6" stroke-width="2" stroke-linecap="round"/>
-        <circle cx="12" cy="2.6" r="1.7" fill="#FFA05A"/>
-      </svg>
-      Lunker
-    </span>
+  <nav aria-label="Primary">
+    <a class="brand" href="/"><img src="/assets/icon-256.png" alt="" width="34" height="34">Lunker</a>
+    <a class="hide" href="#bite">The bite</a>
     <a class="hide" href="#how">How it works</a>
-    <a class="hide" href="https://github.com/edycutjong/lunker">Code</a>
+    <a class="hide" href="#faq">FAQ</a>
+    <a class="hide" href="/pitch/">Pitch deck</a>
+    <a class="hide" href="https://github.com/edycutjong/lunker">GitHub</a>
     <a class="live" href="/verify"><span class="dot"></span>Live ledger</a>
   </nav>
-</div>
 
-<div class="wrap">
-  <header>
-    <div>
-      <div class="kicker">Shipaton 2026 · Keep Them Coming Back</div>
-      <h1>The fish bite while your phone is in your pocket.</h1>
-      <p class="lede">
-        Lunker is a cozy fishing game where the <strong>notification is the game</strong>.
-        Your rod twitches while the app is closed. You have 60 seconds to tap in and win the
-        reel-tension minigame before the catch escapes. Miss it and the fish is gone —
-        <strong>the push is not a reminder to play, it is the play</strong>.
-      </p>
+  <header class="hero">
+    <div class="stagger">
+      <div class="label">Shipaton 2026 · Keep Them Coming Back · Best Game</div>
+      <h1>The lake texts you when <em>a fish is biting.</em></h1>
+      <p class="lede">You mute every game within a week — none of their pushes were ever worth it.
+        Lunker sends one kind: a bite. Tap within <b>60 seconds</b>, hold the needle in the zone for
+        <b>six seconds</b>, and the fish is yours. Miss it and it escapes.</p>
       <div class="ctas">
+        <a class="btn gh" href="https://github.com/edycutjong/lunker"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>View on GitHub</a>
+        <a class="btn" href="/pitch/">Pitch deck</a>
+        <a class="btn" href="/verify"><span class="dot"></span>Live ledger</a>
         <a class="btn primary" href="⟦FILL:PLAY_URL⟧">Get it on Google Play</a>
-        <a class="btn ghost" href="⟦FILL:VIDEO_URL⟧">Watch the 2-min demo</a>
       </div>
-      <div class="pills">
-        <span class="pill">React Native · Expo</span>
-        <span class="pill">RevenueCat Virtual Currency</span>
-        <span class="pill">OneSignal Push</span>
-        <span class="pill">Cloudflare Workers · D1</span>
-      </div>
+      <div class="run"><code>ttl: 60</code><span>the push expires on its own</span><span>· 260 tests</span></div>
     </div>
 
-    <div class="phone" role="img" aria-label="Android lock screen showing the bite notification">
-      <div class="lock-time">9:41</div>
-      <div class="lock-date">Tuesday, September 22</div>
-      <div class="notif">
-        <div class="ico">🎣</div>
-        <div>
-          <div class="t">Lunker</div>
-          <div class="b">Your rod is twitching at Willow Lake<br><em>60s before it escapes.</em></div>
-        </div>
+    <div class="float" role="img" aria-label="The bite notification floating on the lake; its 60-second ring drains to zero while ripples spread from it">
+      <div class="lockclock" aria-hidden="true">9:41<small>Tuesday, September 22</small></div>
+      <div class="ripple"></div><div class="ripple"></div><div class="ripple"></div>
+      <div class="card">
+        <img src="/assets/icon-256.png" alt="" width="42" height="42">
+        <div><div class="app"><span>Lunker</span><span>now</span></div>
+          <div class="t">Your rod is twitching at Willow Lake<br><em>60s before it escapes.</em></div></div>
+        <div class="ring" id="ring">60</div>
       </div>
+      <div class="caption">the real push copy · <b>worker/src/lib/onesignal.ts</b></div>
     </div>
   </header>
+</div></div>
+
+<div class="wrap">
+  <section id="proof" aria-label="Receipts">
+    <div class="receipts">
+      <div><div class="v count" id="tests">260</div><div class="k">tests, on Node 22 and 24</div><div class="src">npm test · across 13 files · real SQLite</div></div>
+      <div><div class="v"><span class="count" data-to="60">60</span><small>s</small></div><div class="k">then OneSignal drops the push</div><div class="src">ttl: 60 · worker/src/lib/onesignal.ts</div></div>
+      <div><div class="v"><span class="count" data-to="6">6</span><small>s</small></div><div class="k">of steady hold lands the fish</div><div class="src">requiredHold: 6 · shared/tension.js</div></div>
+      <div><div class="v"><span class="count" data-to="1200">1,200</span></div><div class="k">COIN for Quarry Pool, debited server-side</div><div class="src">cost: 1200 · shared/content.js</div></div>
+    </div>
+    <div class="ledger">
+      <div><div class="v" id="pct">—</div><div class="k">of bite pushes answered within 60s</div><div class="src" id="pct-src">Loading from /verify…</div></div>
+      <div><div class="v" id="p50">—</div><div class="k">median open latency</div><div class="src" id="p50-src">Measured from send, not from open</div></div>
+      <div class="state"><span id="ledger-state">Reading the live ledger…</span>
+        <span>These two are read live from <a href="/verify">/verify</a> on every visit, so there is nothing here to type in by hand. OneSignal's first real bite goes out after the 2026-09-26 fix.</span></div>
+    </div>
+  </section>
 </div>
 
 <div class="wrap">
-  <section>
-    <h2>Proof — live from the production ledger</h2>
-    <div class="proof">
-      <div class="stat">
-        <div class="v" id="pct">—</div>
-        <div class="k">of bite pushes answered within 60s</div>
-        <div class="src" id="pct-src">Loading from /verify…</div>
+  <section id="bite" class="pair">
+    <div class="phones">
+      <img class="back" src="/assets/shot-escaped.webp" alt="Lunker — the reel at Willow Lake with 3 seconds left, the ring turned amber" width="290" height="516" loading="lazy">
+      <img class="front" src="/assets/shot-reel.webp" alt="Lunker — the reel-tension minigame at Willow Lake, 37 seconds left, hold 0.0 of 6 seconds" width="290" height="516" loading="lazy">
+      <span class="tag t1">0:37 · reeling</span><span class="tag t2">0:03 · about to escape</span>
+    </div>
+    <div>
+      <div class="label">The bite · what leaves the Worker</div>
+      <h2>Tap it, and you are <em>already reeling.</em></h2>
+      <p class="lede">The deep link opens the minigame, not a home screen. The roll seed is written to D1
+        <b>before</b> this request leaves, so the phone never gets to name its own fish.</p>
+      <div class="term">
+        <div class="bar"><span>OneSignalClient.sendBite()</span><span>POST /notifications</span></div>
+<pre id="replay"><span class="k">"name"</span>: <span class="s">"bite:willow"</span>,
+<span class="k">"include_aliases"</span>: { <span class="k">"external_id"</span>: [<span class="s">"…"</span>] },
+<span class="k">"contents"</span>: { <span class="k">"en"</span>: <span class="s">"Your rod is twitching at Willow Lake\\n60s before it escapes."</span> },
+<span class="k">"app_url"</span>: <span class="s">"lunker://bite/willow?nid=…"</span>,
+<span class="k">"collapse_id"</span>: <span class="s">"bite:…"</span>,
+<span class="k">"ttl"</span>: <span class="hot">60</span></pre>
       </div>
-      <div class="stat">
-        <div class="v" id="p50">—</div>
-        <div class="k">median open latency</div>
-        <div class="src" id="p50-src">Measured from send, not from open</div>
+      <div class="srcline">Screens: the release APK on an emulator, 2026-09-26. Payload: <a href="https://github.com/edycutjong/lunker/blob/main/worker/src/lib/onesignal.ts">worker/src/lib/onesignal.ts</a>. OneSignal has sent 0 bites so far.</div>
+    </div>
+  </section>
+</div>
+
+<div class="wrap">
+  <section id="how">
+    <div class="label">The bank · how it works</div>
+    <h2>A game that only <em>speaks when it matters.</em></h2>
+    <p class="lede">One mechanic, one loop. Every rule below is enforced by the server, and every chip names the exact call.</p>
+    <div class="bento">
+      <div class="cell c-times">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#3FDBB6" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        <h3>Bite times, as the dispatcher enforces them</h3>
+        <p>Every 15 minutes the cron asks who is due. A lake only bites in its own hours, <b>never while you are asleep</b>, and never twice within the hour.</p>
+        ${BITE_TIMES}
       </div>
-      <div class="stat">
-        <div class="v" id="tests">252</div>
-        <div class="k">tests, and a ledger you can read</div>
-        <div class="src">node scripts/lunker-verify.mjs bench · <a href="/verify" style="color:var(--primary)">/verify</a></div>
+      <div class="cell c-timer">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#FFA05A" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 3v4M21 12h-4"/></svg></div>
+        <h3>The push is the timer</h3>
+        <p>"60s before it escapes" fits Android's ~65-char budget, and OneSignal drops the push at 60 s. Two bites can never stack.</p>
+        <span class="chip">ttl: 60</span><span class="chip">collapse_id</span>
+      </div>
+      <div class="cell c-seed">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#3FDBB6" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M15 4v9a4 4 0 1 1-8 0"/><path d="m7 13-2 1 2-3"/></svg></div>
+        <h3>Your phone never names its fish</h3>
+        <p><code>/catch-resolved</code> has no <code>fish</code> field. The server rolls from a seed it wrote before the push left.</p>
+        <span class="chip">HMAC-SHA256(notification_id)</span>
+      </div>
+      <div class="cell c-coin">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#3FDBB6" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><ellipse cx="12" cy="7" rx="7" ry="3"/><path d="M5 7v5c0 1.7 3.1 3 7 3s7-1.3 7-3V7M5 12v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5"/></svg></div>
+        <h3>Your phone never moves its balance</h3>
+        <p>Every grant and spend is a server-side RevenueCat Virtual Currency call; if RevenueCat does not confirm, the catch comes back <code>settled: false</code>. The HUD re-reads after <code>invalidateVirtualCurrenciesCache()</code>.</p>
+        <span class="chip">RevenueCat VC REST v2</span><span class="chip">getVirtualCurrencies()</span>
+      </div>
+      <div class="cell c-lakes">
+        <div>
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#FFA05A" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m11 12 8-8M16 7l2 2M14 9l2 2"/></svg></div>
+          <h3>Two ways into the next lake</h3>
+          <p>Quarry Pool for <b>1,200 COIN</b>, debited atomically. Deep Sea with the <b>Angler’s Pass</b> entitlement. Each unlock fires a OneSignal event a Journey can enter on.</p>
+          <span class="chip">anglers_pass</span><span class="chip">lake_unlocked</span>
+        </div>
+        <img src="/assets/shot-lakes.webp" alt="Lunker — The Water: Willow Lake, Reed Shallows, Quarry Pool for 1,200, Deep Sea with Angler's Pass" width="150" height="267" loading="lazy">
       </div>
     </div>
   </section>
+</div>
 
-  <section id="how">
-    <h2>How it works</h2>
-    <div class="steps">
-      <div class="step">
-        <h3>A bite arrives</h3>
-        <p>The Worker's cron dispatcher picks the moment — your lake, your local hour, never
-           while you are asleep — writes the roll seed, then sends through OneSignal. The
-           notification carries a hard 60-second expiry and says so on the lock screen, inside
-           Android's character budget, so the stakes are visible without expanding it.</p>
-      </div>
-      <div class="step">
-        <h3>You reel it in</h3>
-        <p>Tapping opens straight into the reel-tension minigame — not a home screen. Hold the
-           needle inside the moving green zone for six seconds. Miss the window and it escapes:
-           no coins, no shame, streak intact.</p>
-      </div>
-      <div class="step">
-        <h3>The coin is settled</h3>
-        <p>The server rolls the fish against a committed weight table and asks RevenueCat's
-           Virtual Currency API to credit COIN; if RevenueCat does not confirm, the catch is
-           reported unsettled. Your client never names its own catch and never moves its own
-           balance — which is why the ledger is worth reading.</p>
-      </div>
+<div class="wrap">
+  <section id="honest">
+    <div class="label">The logbook · honest by design</div>
+    <h2>What we <em>won’t</em> tell you yet.</h2>
+    <div class="quotes">
+      <blockquote><p>“When this section was written (2026-09-26) the ledger held no rows, and a figure here would be a guess.”</p><cite>— README · Engineering Rigor</cite></blockquote>
+      <blockquote><p>“Which is why OneSignal had sent zero notifications. CI was green because the suite stubbed <code>fetch</code> with arrow functions.”</p><cite>— README · What we got wrong</cite></blockquote>
+      <blockquote><p>“Unanswered bites stay in the denominator … ignoring a bite counts against us.”</p><cite>— README · Engineering Rigor</cite></blockquote>
+    </div>
+  </section>
+</div>
+
+<div class="wrap">
+  <section id="faq">
+    <div class="label">Questions from the bank</div>
+    <h2>What a judge would ask.</h2>
+    <div class="faq">
+      <details><summary>Has a real bite been sent yet?</summary><p>No — <b>OneSignal has sent 0 notifications.</b> Until 2026-09-26 the Worker called <code>fetch</code> with the wrong <code>this</code>, and the Workers runtime threw <code>Illegal invocation</code> on every request. It is fixed, and <code>tests/fetch-binding.test.js</code> fails on the old code.</p></details>
+      <details><summary>Why is the answer-rate number empty?</summary><p>Because the live ledger has no rows yet. The number is read from <a href="/verify">/verify</a> on every visit and is never typed in; an empty ledger renders as “no data yet”, not as a guess.</p></details>
+      <details><summary>Is COIN real?</summary><p>The server path is built and tested: grants, spends, the atomic debit and the <code>settled: false</code> refusal. The COIN currency has <b>not yet been created in RevenueCat</b>, so no grant has settled. When it is, the balance you see is RevenueCat’s word, not the phone’s.</p></details>
+      <details><summary>Can a modified APK claim a Legendary?</summary><p>No. The client never sends a fish. The server rolls against the lake’s committed table with a seed derived from <code>HMAC-SHA256(notification_id, ROLL_SERVER_SECRET)</code>, written before the push leaves.</p></details>
+      <details><summary>What happens if I ignore the push?</summary><p>The fish escapes and your streak survives. The bite still counts: its telemetry row is written at send time, so an unanswered bite stays in the denominator of the number we lead with.</p></details>
+      <details><summary>Can I play it today?</summary><p>Not from a store yet — the Google Play listing is not live, and there is no demo video yet. The buttons say so instead of 404-ing. The code, the tests and the ledger are public now.</p></details>
     </div>
   </section>
 </div>
 
 <div class="wrap">
   <footer>
-    <span class="sp">Built solo for RevenueCat Shipaton 2026.</span>
+    <span class="sp"><img src="/assets/icon-256.png" alt="" width="26" height="26">Built solo for RevenueCat Shipaton 2026.</span>
     <a href="https://github.com/edycutjong/lunker">GitHub</a>
+    <a href="/pitch/">Pitch deck</a>
     <a href="/verify">Live ledger</a>
+    <a href="/privacy">Privacy</a>
+    <a href="⟦FILL:VIDEO_URL⟧">Demo video</a>
     <a href="⟦FILL:DEVPOST_URL⟧">Devpost</a>
+    <a href="https://github.com/edycutjong/lunker/blob/main/LICENSE">MIT License</a>
   </footer>
 </div>
 
 <script>
+  // The push is the timer: the card's ring drains 60 -> 0 and loops.
+  (function () {
+    var r = document.getElementById('ring'), t = 60;
+    if (!r || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    setInterval(function () {
+      t = t <= 0 ? 60 : t - 1;
+      r.textContent = t;
+      r.style.setProperty('--p', (t / 60) * 100);
+    }, 1000);
+  })();
+
+  // Count-ups start from the real value in the HTML (print, no-JS and
+  // screenshots all see it) and only replay once the band scrolls into view.
+  (function () {
+    if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var els = document.querySelectorAll('.count');
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        io.unobserve(e.target);
+        var el = e.target, to = Number(el.getAttribute('data-to') || el.textContent.replace(/,/g, ''));
+        var t0 = performance.now();
+        (function tick(now) {
+          var k = Math.min(1, (now - t0) / 900), v = Math.round(to * (1 - Math.pow(1 - k, 3)));
+          el.textContent = v.toLocaleString('en-US');
+          if (k < 1) requestAnimationFrame(tick);
+        })(t0);
+      });
+    }, { threshold: 0.6 });
+    els.forEach(function (el) { io.observe(el); });
+  })();
+
+  // Replay the real sendBite() body once, as it scrolls into view.
+  (function () {
+    var pre = document.getElementById('replay');
+    if (!pre || !('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var html = pre.innerHTML, io = new IntersectionObserver(function (en) {
+      if (!en[0].isIntersecting) return;
+      io.disconnect();
+      var tmp = document.createElement('div'); tmp.innerHTML = html;
+      var plain = tmp.textContent, i = 0;
+      pre.textContent = '';
+      var id = setInterval(function () {
+        i += 3;
+        pre.textContent = plain.slice(0, i);
+        if (i >= plain.length) { clearInterval(id); pre.innerHTML = html; }
+      }, 16);
+    }, { threshold: 0.5 });
+    io.observe(pre);
+  })();
+
   // Numbers come from the same computation the CLI runs. Nothing here is typed
   // in by hand, so the page cannot drift from the ledger it summarises.
   fetch('/verify?format=json')
@@ -242,10 +611,10 @@ export const LANDING_HTML = `<!doctype html>
       var b = d.bench;
       var pct = document.getElementById('pct');
       var src = document.getElementById('pct-src');
+      var state = document.getElementById('ledger-state');
       if (b.answeredPct === null || b.denominator === 0) {
         pct.textContent = 'no data yet';
-        pct.style.fontSize = '22px';
-        pct.style.color = 'var(--text-mid)';
+        pct.className = 'v empty';
         src.textContent = 'No bites reported to the live ledger yet';
       } else {
         pct.textContent = b.answeredPct.toFixed(1) + '%';
@@ -253,14 +622,20 @@ export const LANDING_HTML = `<!doctype html>
           ' BITES · ' + d.testers + ' TESTERS';
       }
       var p50 = document.getElementById('p50');
-      p50.textContent = b.p50 === null ? '—' : (b.p50 / 1000).toFixed(1) + 's';
+      if (b.p50 === null) { p50.textContent = 'no data yet'; p50.className = 'v empty'; }
+      else p50.textContent = (b.p50 / 1000).toFixed(1) + 's';
       document.getElementById('p50-src').textContent =
         b.p95 === null ? 'Measured from send, not from open'
                        : 'p95 ' + (b.p95 / 1000).toFixed(1) + 's · n=' + b.latencyN +
                          ' · MEASURED FROM SEND';
+      state.innerHTML = 'The ledger holds <b>' + b.denominator + '</b> bite' +
+        (b.denominator === 1 ? '' : 's') + ' from <b>' + d.testers + '</b> player' +
+        (d.testers === 1 ? '' : 's') + ', and <b>' + d.purchase_events + '</b> verified purchase' +
+        (d.purchase_events === 1 ? '' : 's') + '.';
     })
     .catch(function () {
       document.getElementById('pct-src').textContent = 'Ledger unreachable';
+      document.getElementById('ledger-state').textContent = 'The live ledger did not answer.';
     });
 </script>
 </body></html>`;
