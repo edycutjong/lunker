@@ -36,7 +36,10 @@ export class OneSignalClient {
   constructor(
     private readonly appApiKey: string,
     private readonly appId: string,
-    private readonly fetchImpl: typeof fetch = fetch,
+    // NOT `= fetch`: calling the global through `this.fetchImpl(...)` gives it
+    // the wrong `this`, and the Workers runtime throws "Illegal invocation" on
+    // every request. The tests inject their own fetch, so only production saw it.
+    private readonly fetchImpl: typeof fetch = (input, init) => fetch(input, init),
   ) {}
 
   private headers() {

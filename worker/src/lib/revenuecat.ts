@@ -24,7 +24,10 @@ export class RevenueCatClient {
   constructor(
     private readonly secretKey: string,
     private readonly projectId: string,
-    private readonly fetchImpl: typeof fetch = fetch,
+    // NOT `= fetch`: calling the global through `this.fetchImpl(...)` gives it
+    // the wrong `this`, and the Workers runtime throws "Illegal invocation" on
+    // every request. The tests inject their own fetch, so only production saw it.
+    private readonly fetchImpl: typeof fetch = (input, init) => fetch(input, init),
   ) {}
 
   /**
@@ -40,14 +43,23 @@ export class RevenueCatClient {
       this.projectId,
     )}/customers/${encodeURIComponent(appUserId)}/virtual_currencies/transactions`;
 
-    const res = await this.fetchImpl(url, {
-      method: 'POST',
-      headers: {
-        authorization: `Bearer ${this.secretKey}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ adjustments }),
-    });
+    let res: Response;
+    try {
+      res = await this.fetchImpl(url, {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${this.secretKey}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ adjustments }),
+      });
+    } catch (err) {
+      // A transport failure is a refusal, not a crash. Throwing here escaped the
+      // route after its reservation row was written, so the row was never
+      // released and every retry answered 409 in_flight — a permanent lockout.
+      // Status 0 takes the routes' existing release-and-report path.
+      return { status: 0, balance: null, raw: String(err) };
+    }
 
     let raw: unknown = null;
     try {

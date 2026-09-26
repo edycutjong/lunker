@@ -81,6 +81,9 @@ export function LakeMapScreen({
             'The server did not confirm the spend. Nothing was charged.',
           );
         }
+      } catch {
+        // A thrown request (offline, 5xx) used to leave the tap silently dead.
+        Alert.alert('Could not reach the water', 'Check your connection. Nothing was charged.');
       } finally {
         setBusy(null);
       }
