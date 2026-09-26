@@ -29,7 +29,7 @@ export default tseslint.config(
       '**/node_modules/**',
       'coverage/**',
       'docs/assets/**',
-      '.wrangler/**',
+      '**/.wrangler/**',
       '.expo/**',
       'dist/**',
       // Emitted by scripts/seed.mjs and scripts/lunker-verify.mjs, byte-compared

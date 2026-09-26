@@ -14,6 +14,12 @@ app/package-lock.json
 
 # Binary / generated assets.
 docs/assets/
+worker/public/assets/
+
+# The pitch deck is assembled outside the repo and byte-compared: its bite-times
+# table must equal renderBiteTimes() exactly (tests/landing.test.js). A
+# formatter that reflowed that markup would break the equality on whitespace.
+worker/public/pitch/
 
 # Judge-facing prose. Prettier's Markdown printer pads table cells to the width
 # of the widest row (turning a readable table into 250-character lines) and

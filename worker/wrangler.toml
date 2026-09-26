@@ -6,6 +6,14 @@ compatibility_flags = ["nodejs_compat"]
 # The bite dispatcher. Every 15 minutes it sends to whoever is due; the per-player
 # cadence gate (one bite per hour, never outside the lake's hours) lives in
 # src/lib/bite.ts, not in this schedule.
+# Static assets: the landing page's images (/assets/…) and the pitch deck (/pitch/).
+# A request that matches a file here is served without invoking the Worker, so
+# public/ must never contain a path the Worker routes (/, /verify, /privacy,
+# /health, the POST API). tests/landing.test.js enforces that. Anything that is
+# not a file falls through to the Worker unchanged.
+[assets]
+directory = "./public"
+
 [triggers]
 crons = ["*/15 * * * *"]
 
