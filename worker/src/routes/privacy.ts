@@ -90,10 +90,7 @@ else about the app is withheld if you say no.</p>
 <p>Lunker is not directed at children under 13 and does not knowingly collect data from them.</p>
 
 <h2>Keeping and deleting your data</h2>
-<p>Game state is kept while you play and for a reasonable period afterwards. Because the player id
-is generated on your device and is not tied to an email address, we cannot look you up by name — so
-to have your data deleted, send us the player id from the app together with your request and we will
-remove the associated rows. Purchase records may be retained where tax or accounting rules require
+<p>Game state is kept while you play and for a reasonable period afterwards. Because the player id is generated on your device and is not tied to an email address, we cannot look you up by name. How to ask, what is deleted and what is kept: <a href="delete-data.html">Delete your data</a>. Purchase records may be retained where tax or accounting rules require
 it.</p>
 
 <h2>Contact</h2>

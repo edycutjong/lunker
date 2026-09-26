@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Lunker — Delete your data</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        background: #04171e;
+        color: #d6e5ea;
+        font:
+          16px/1.65 -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+      }
+      main {
+        max-width: 44rem;
+        margin: 0 auto;
+        padding: 3rem 1.25rem 5rem;
+      }
+      h1 {
+        font-size: 1.75rem;
+        margin: 0 0 0.35rem;
+        color: #fff;
+      }
+      h2 {
+        font-size: 1.05rem;
+        margin: 2.25rem 0 0.6rem;
+        color: #3fdbb6;
+      }
+      .sub {
+        color: #7e9aa3;
+        font-size: 0.9rem;
+        margin: 0 0 2rem;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 0.5rem 0 1rem;
+        font-size: 0.92rem;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 0.5rem 0.6rem;
+        border-bottom: 1px solid #14323c;
+        vertical-align: top;
+      }
+      th {
+        color: #7e9aa3;
+        font-weight: 600;
+      }
+      code {
+        background: #0b2f39;
+        padding: 0.1rem 0.35rem;
+        border-radius: 4px;
+        font-size: 0.88em;
+      }
+      ul {
+        padding-left: 1.1rem;
+      }
+      li {
+        margin: 0.3rem 0;
+      }
+      a {
+        color: #3fdbb6;
+      }
+      .foot {
+        margin-top: 2.5rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid #14323c;
+        color: #7e9aa3;
+        font-size: 0.88rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Delete your Lunker data</h1>
+      <p>
+        Lunker (Google Play: <code>dev.edycu.lunker</code>) has no accounts, so a deletion request
+        is one email. This page explains how to ask, what is deleted, and what is kept.
+      </p>
+
+      <h2>How to request deletion</h2>
+      <ol>
+        <li>
+          Email
+          <a href="mailto:edy.cu@live.com?subject=Delete%20my%20Lunker%20data">edy.cu@live.com</a>
+          with the subject <strong>“Delete my Lunker data”</strong>.
+        </li>
+        <li>
+          If you bought anything in Lunker, include the
+          <strong>Google Play order number</strong> (it starts with <code>GPA.</code> and is in your
+          Google Play receipt email, or at
+          <a href="https://play.google.com/store/account/orderhistory"
+            >play.google.com → Payments &amp; subscriptions → Budget &amp; history</a
+          >). This is how we find your record.
+        </li>
+        <li>
+          If you never bought anything, tell us the approximate date you installed Lunker and your
+          furthest lake. Your player id is random and not linked to your name or email, so we can
+          only remove rows we can confidently match; anything we cannot match identifies no one.
+        </li>
+        <li>
+          We delete the data listed below <strong>within 30 days</strong> and reply to confirm.
+        </li>
+      </ol>
+
+      <h2>What is deleted</h2>
+      <ul>
+        <li>
+          Your game record on our server: player id, lakes, streak, catches, notification
+          permission, UTC offset, and the bite send/open times for your player id.
+        </li>
+        <li>Your COIN ledger rows and purchase-event rows for your player id.</li>
+        <li>Your OneSignal push subscription (the push token and its tags).</li>
+        <li>
+          Your RevenueCat customer record (virtual-currency balance and purchase history as
+          RevenueCat stores it).
+        </li>
+      </ul>
+
+      <h2>What is kept, and for how long</h2>
+      <ul>
+        <li>
+          <strong>Google Play order records</strong> (what was bought, when, and the amount) are
+          kept by Google under Google’s own retention rules, which we do not control.
+        </li>
+        <li>
+          Where tax or accounting rules require it, a minimal purchase record (product, date, amount
+          — no personal details) may be retained for the legally required period, then deleted.
+        </li>
+        <li>
+          Deletion does not cancel an active subscription. Cancel it first in Google Play → Payments
+          &amp; subscriptions → Subscriptions.
+        </li>
+      </ul>
+
+      <h2>Data on your phone</h2>
+      <p>
+        Your local save lives in the app’s private storage. Uninstalling Lunker, or Android Settings
+        → Apps → Lunker → Storage → Clear storage, deletes it immediately. Turning off Lunker
+        notifications in Android Settings stops all bites at once.
+      </p>
+
+      <p>Full details of what Lunker collects: <a href="privacy.html">Privacy policy</a>.</p>
+    </main>
+  </body>
+</html>
