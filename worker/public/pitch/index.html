@@ -417,7 +417,7 @@ Never-opened (denominator only): 12</pre></div>
   function pad(x) { return (x < 10 ? '0' : '') + x; }
   function fit() {
     if (document.body.classList.contains('overview')) { stage.style.transform = ''; return; }
-    var s = Math.min(innerWidth / 1920, innerHeight / 1080);
+    var s = Math.min((document.documentElement.clientWidth || innerWidth) / 1920, (document.documentElement.clientHeight || innerHeight) / 1080);
     stage.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
   }
   function go(k) {

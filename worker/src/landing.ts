@@ -125,7 +125,7 @@ export const LANDING_HTML = `<!doctype html>
     color-scheme:dark;
   }
   *{box-sizing:border-box}
-  html{scroll-behavior:smooth;scrollbar-color:#1d4a52 var(--bg)}
+  html{overflow-x:clip;scroll-behavior:smooth;scrollbar-color:#1d4a52 var(--bg)}
   body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 var(--font-body);
     -webkit-font-smoothing:antialiased;overflow-x:hidden}
   ::selection{background:var(--after);color:var(--bg)}
