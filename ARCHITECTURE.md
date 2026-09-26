@@ -126,7 +126,7 @@ Pass and no lake economy.**
 2. In-app message **permission prime**, whose own accept button (`actionId: prime_accept`) is what
    fires the native prompt — after the first landed catch, once. A dismiss never spends the ask;
    an unauthored message falls back to the native prompt after 4s so nobody goes un-asked.
-3. `Notifications.requestPermission` / `hasPermission` — reported to the Worker verbatim
+3. `Notifications.requestPermission` / `getPermissionAsync` — reported to the Worker verbatim
 4. `Notifications.addEventListener('click')` — the deep link into the minigame
 5. `User.addTags` — `current_lake`, `streak_days`, `unlocked_count`, `rare_count`; what the Journeys branch on
 6. Server-side `POST /notifications` and custom events — [`worker/src/lib/onesignal.ts`](worker/src/lib/onesignal.ts)

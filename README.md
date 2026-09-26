@@ -21,7 +21,7 @@
 ![RevenueCat](https://img.shields.io/badge/RevenueCat_v10-F25A5A?style=flat)
 ![OneSignal](https://img.shields.io/badge/OneSignal_v5-E54B4D?style=flat&logo=onesignal&logoColor=white)
 
-**245 tests** · built for RevenueCat Shipaton 2026 — *Keep Them Coming Back* and *Best Game*
+**249 tests** · built for RevenueCat Shipaton 2026 — *Keep Them Coming Back* and *Best Game*
 
 [![CI](https://github.com/edycutjong/lunker/actions/workflows/ci.yml/badge.svg)](https://github.com/edycutjong/lunker/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/edycutjong/lunker/actions/workflows/codeql.yml/badge.svg)](https://github.com/edycutjong/lunker/actions/workflows/codeql.yml)
@@ -100,7 +100,8 @@ next to the balance is the visible surface of that.
 
 **Purchases are recorded from a source that isn't the client.** The
 HMAC-verified RevenueCat webhook is the only writer of `purchase_events`, which
-is the table `/verify` reads from. Signature checked over the raw body bytes,
+is the table `/verify` reads from. Signature checked over the timestamp and the
+raw body bytes, with a five-minute replay window;
 `event_id` as the primary key so retries are idempotent for free.
 → [`worker/src/routes/revenuecat-webhook.ts`](worker/src/routes/revenuecat-webhook.ts)
 
@@ -151,7 +152,7 @@ built around keeping it that way.
 | Format | Prettier | hard — `npm run format:check` |
 | Lint | ESLint 9, one flat config across the Worker, the RN app and shared ESM | hard — `npm run lint` |
 | Types | `tsc --noEmit` on two independent tsconfigs (Workers types, React Native types) | hard, as a matrix |
-| Tests | Vitest, 245 across 11 files, on Node 22 **and** 24 | hard |
+| Tests | Vitest, 249 across 11 files, on Node 22 **and** 24 | hard |
 | Determinism | content seed + telemetry fixture byte-compared; bench output asserted literally | hard |
 | Secrets | gitleaks over the **full git history** and the working tree, with rules for all four secrets · GitHub secret scanning with push protection | hard |
 | SAST | CodeQL `javascript-typescript`, `security-and-quality` | hard |
@@ -186,7 +187,7 @@ Node **22.5+** — the tests run the real migration against `node:sqlite`.
 ### Installation
 
 ```sh
-npm install && npm test          # 245 tests
+npm install && npm test          # 249 tests
 npm run seed                     # deterministic content seed
 npm run bench                    # the killer-number computation, on fixture data
 
@@ -211,7 +212,7 @@ places it belongs in: [`.env.example`](.env.example).
 
 ## 🧪 Testing & CI
 
-**245 tests**, `npm test`. The ones that matter:
+**249 tests**, `npm test`. The ones that matter:
 
 - **The bench arithmetic**, against a fixture whose right answer (17/39 = 43.6%,
   p50 9,000, p95 104,000) was computed by hand before the code existed. Each of
@@ -249,6 +250,25 @@ Documented because the refusals are decisions, not gaps:
   files would produce disagreements that are config bugs, not code bugs.
 
 ## 📝 What we got wrong
+
+**2026-09-26 — the release build crashed on every launch.** `App.tsx` subscribed
+to OneSignal notification clicks on first render, but `OneSignal.initialize()`
+ran later, at the end of the async boot. The native SDK throws
+`IllegalStateException: Must call 'initWithContext' before use` when a listener
+is added before init, and on the React Native bridge thread that is fatal: the
+app closed on every launch. The suite was green throughout, because the
+React Native files cannot be imported into Vitest and the source assertions
+pinned the order of the boot calls, not of a listener registered somewhere else.
+Found by installing the Play build on an Android 15 emulator; fixed in
+`da021ff` by queueing listeners until `initialize()` has run (versionCode 4).
+Sweeping every other `OneSignal.*` and `Purchases.*` call site for the same class
+of bug found one sibling that failed silently rather than loudly: the boot read
+push permission from `Notifications.hasPermission()`, a deprecated JS cache that
+`initialize()` fills asynchronously. Read too early it says `false`, and the boot
+sync would have written `push_enabled = 0` — the flag the bite cron filters on.
+It now asks the native SDK, and the paywall checks `Purchases.isConfigured()`
+before opening, since it is the one RevenueCat call with no JS-side guard. All
+pinned in [`tests/sdk-init.test.js`](tests/sdk-init.test.js).
 
 **2026-09-26 — the purchase ledger would have refused every real purchase.**
 The webhook check read `x-revenuecat-signature` and hashed the body alone.
