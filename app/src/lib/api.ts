@@ -15,7 +15,7 @@ interface LunkerExtra {
 
 const BASE: string =
   (Constants.expoConfig?.extra as LunkerExtra | undefined)?.workerUrl ??
-  'https://lunker.workers.dev';
+  'https://lunker.edycu.workers.dev';
 
 /**
  * Every Worker route answers with a JSON object, and the only field the client
