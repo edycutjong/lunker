@@ -66,7 +66,7 @@ export const LANDING_HTML = `<!doctype html>
   /* A destination that does not exist yet. Rendered as visibly inert rather
      than as a link that 404s — see renderLanding(). */
   .pending{opacity:.42;cursor:not-allowed;text-decoration:none}
-  .pending::after{content:" — soon";font-size:.82em;letter-spacing:.02em}
+  .pending::after{content:" — not live yet";font-size:.82em;letter-spacing:.02em}
   a.pending:hover{transform:none}
   .pills{display:flex;flex-wrap:wrap;gap:8px}
   .pill{font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);
@@ -215,9 +215,10 @@ export const LANDING_HTML = `<!doctype html>
       </div>
       <div class="step">
         <h3>The coin is settled</h3>
-        <p>The server rolls the fish against a committed weight table and credits COIN through
-           RevenueCat's Virtual Currency API. Your client never names its own catch and never
-           moves its own balance — which is why the ledger is worth reading.</p>
+        <p>The server rolls the fish against a committed weight table and asks RevenueCat's
+           Virtual Currency API to credit COIN; if RevenueCat does not confirm, the catch is
+           reported unsettled. Your client never names its own catch and never moves its own
+           balance — which is why the ledger is worth reading.</p>
       </div>
     </div>
   </section>
@@ -297,6 +298,6 @@ const PENDING_LINK = new RegExp(
 export function renderLanding(html: string = LANDING_HTML): string {
   return html.replace(PENDING_LINK, (_match, pre: string, post: string, label: string) => {
     const cls = /class="([^"]*)"/.exec(pre + post)?.[1] ?? '';
-    return `<span class="${cls} pending" aria-disabled="true">${label}</span>`;
+    return `<span class="${`${cls} pending`.trim()}" aria-disabled="true">${label}</span>`;
   });
 }
