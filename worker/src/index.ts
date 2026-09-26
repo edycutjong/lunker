@@ -7,7 +7,7 @@
  */
 
 import type { Env, Deps } from './types.js';
-import { json, html, preflight } from './lib/http.js';
+import { json, preflight } from './lib/http.js';
 import { catchResolved } from './routes/catch-resolved.js';
 import { spendCoin } from './routes/spend-coin.js';
 import { biteOpened } from './routes/bite-opened.js';
@@ -16,8 +16,16 @@ import { verify } from './routes/verify.js';
 import { playerSync } from './routes/player-sync.js';
 import { devCast } from './routes/dev-cast.js';
 import { dispatchBite, isDue, bitesSentToday, dailyCapFor, type Player } from './lib/bite.js';
-import { renderLanding } from './landing.js';
-import { PRIVACY_HTML } from './routes/privacy.js';
+import { ORIGIN as SITE_ORIGIN } from './landing.js';
+
+/** Where an old Worker page URL now lives on the static site, or null. */
+export function sitePath(path: string): string | null {
+  if (path === '/' || path === '/index.html') return '/';
+  if (path === '/privacy' || path === '/privacy.html') return '/privacy.html';
+  if (path === '/pitch' || path.startsWith('/pitch/')) return path === '/pitch' ? '/pitch/' : path;
+  if (path.startsWith('/assets/')) return path;
+  return null;
+}
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
@@ -47,9 +55,12 @@ export default {
 
       if (req.method === 'GET') {
         if (path === '/verify') return await verify(req, deps);
-        if (path === '/' || path === '/index.html') return html(renderLanding());
-        if (path === '/privacy') return html(PRIVACY_HTML);
         if (path === '/health') return json({ ok: true });
+        // The landing, privacy policy, deck and images moved to GitHub Pages
+        // (https://lunker.edycu.dev). Old links — including a privacy URL
+        // already pasted into Play Console — keep working through a redirect.
+        const moved = sitePath(path);
+        if (moved) return Response.redirect(`${SITE_ORIGIN}${moved}${url.search}`, 301);
       }
 
       return json({ error: 'not found', path }, 404);

@@ -1,117 +1,24 @@
-/**
- * The landing page — the one interactive surface a judge can reach in a single
- * click, without installing anything.
- *
- * Verified from the field notes: prescreeners may never install the app. They
- * watch two minutes of video and read a description. So this page is not a
- * marketing afterthought, it is where the proof lives.
- *
- * The live proof numbers are fetched from /verify?format=json rather than typed
- * in. A number that can be edited by hand is a number that eventually drifts
- * from the ledger it claims to summarise. Links that cannot be live (store
- * listing, video) carry unfilled-placeholder tokens, which
- * `scripts/check-submission-readiness.mjs` fails on — so a half-finished page
- * cannot ship quietly.
- *
- * The bite-times card is rendered from the dispatcher's own gate
- * (`isWithinCadence` in lib/bite.ts) and the committed lake table in
- * shared/content.js at module load. It is not a picture of the schedule; it is
- * the schedule, so the page cannot claim an hour the cron would refuse.
- *
- * The page is static: `scripts/build-site.mjs` renders it into `site/`, which
- * GitHub Pages publishes at https://lunker.edycu.dev (with the privacy policy,
- * images and the pitch deck). Only the live ledger stays on the Worker, so
- * /verify links and the stats fetch use the absolute API_ORIGIN.
- */
-
-import { LAKES, RARITY_ORDER } from '../../shared/content.js';
-import { isWithinCadence, MIN_BITE_GAP_MS } from './lib/bite.js';
-
-/** Canonical public origin — og:image and og:url must be absolute. */
-export const ORIGIN = 'https://lunker.edycu.dev';
-
-/** The Worker: the live ledger (/verify) and the game API. */
-export const API_ORIGIN = 'https://lunker.edycu.workers.dev';
-
-const HOURS = Array.from({ length: 24 }, (_, h) => h);
-const pad = (h: number) => String(h).padStart(2, '0');
-
-/** A lake's biting hours as "08–19", derived from the gate, not restated. */
-function windowLabel(lakeId: string): string {
-  const on = HOURS.filter((h) => isWithinCadence(lakeId, h));
-  if (on.length === 0) return 'never';
-  return `${pad(on[0])}–${pad(on[on.length - 1] + 1)}`;
-}
-
-function unlockLabel(u: (typeof LAKES)[number]['unlock']): string {
-  if (u.type === 'free') return 'free';
-  if (u.type === 'coin') return `${u.cost.toLocaleString('en-US')} COIN`;
-  return 'Angler’s Pass';
-}
-
-function topRarity(lake: (typeof LAKES)[number]): string {
-  let best = 0;
-  for (const f of lake.fish) best = Math.max(best, RARITY_ORDER.indexOf(f.rarity));
-  return RARITY_ORDER[best];
-}
-
-/**
- * The bite-times table. One row per lake, one cell per local hour. An hour in
- * which no lake may bite is marked as sleep — computed, not hardcoded, so if
- * the quiet-hours gate in bite.ts ever moves, this card moves with it.
- */
-export function renderBiteTimes(): string {
-  const asleep = HOURS.map((h) => LAKES.every((l) => !isWithinCadence(l.id, h)));
-  const head = HOURS.map(
-    (h) => `<span class="hr">${h % 6 === 0 || h === 23 ? pad(h) : ''}</span>`,
-  ).join('');
-  const rows = LAKES.map((lake) => {
-    const cells = HOURS.map((h) => {
-      const cls = isWithinCadence(lake.id, h) ? 'on' : asleep[h] ? 'zz' : 'off';
-      return `<i class="${cls}" title="${lake.name} ${pad(h)}:00"></i>`;
-    }).join('');
-    const [lo, hi] = lake.bites_per_day;
-    return (
-      `<div class="bt-row"><div class="bt-lake"><b>${lake.name}</b>` +
-      `<small>${unlockLabel(lake.unlock)} · ${windowLabel(lake.id)} · ${lo}–${hi} a day · ` +
-      `<span class="r-${topRarity(lake)}">up to ${topRarity(lake)}</span></small></div>` +
-      `<div class="bt-cells" aria-hidden="true">${cells}</div></div>`
-    );
-  }).join('');
-  const gapH = MIN_BITE_GAP_MS / 3_600_000;
-  return (
-    `<div class="bt" role="group" aria-label="Hours in which each lake may bite, local time">` +
-    `<div class="bt-row bt-head" aria-hidden="true"><div></div><div class="bt-cells">${head}</div></div>${rows}</div>` +
-    `<p class="bt-legend"><span><i class="on"></i>may bite</span>` +
-    `<span><i class="zz"></i>asleep — no lake bites</span>` +
-    `<span>never two bites within ${gapH} hour${gapH === 1 ? '' : 's'}</span>` +
-    `<span class="src">rendered from isWithinCadence() · worker/src/lib/bite.ts</span></p>`
-  );
-}
-
-const BITE_TIMES = renderBiteTimes();
-
-export const LANDING_HTML = `<!doctype html>
+<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Lunker — the lake texts you when a fish is biting</title>
 <meta name="description" content="A cozy fishing game where the notification is the game. Your rod twitches while the app is closed, and you have 60 seconds to answer it.">
-<link rel="canonical" href="${ORIGIN}/">
+<link rel="canonical" href="https://lunker.edycu.dev/">
 <meta name="theme-color" content="#04171E">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Lunker">
-<meta property="og:url" content="${ORIGIN}/">
+<meta property="og:url" content="https://lunker.edycu.dev/">
 <meta property="og:title" content="Lunker — the lake texts you when a fish is biting">
 <meta property="og:description" content="The push notification is not a reminder to play. It is the play: 60 seconds to answer it before the fish escapes.">
-<meta property="og:image" content="${ORIGIN}/assets/og-image.jpg">
+<meta property="og:image" content="https://lunker.edycu.dev/assets/og-image.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Lunker — a lock-screen notification: Your rod is twitching at Willow Lake, 60s before it escapes.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Lunker — the lake texts you when a fish is biting">
 <meta name="twitter:description" content="The push notification is not a reminder to play. It is the play.">
-<meta name="twitter:image" content="${ORIGIN}/assets/og-image.jpg">
+<meta name="twitter:image" content="https://lunker.edycu.dev/assets/og-image.jpg">
 <link rel="icon" type="image/png" href="/assets/favicon-64.png">
 <link rel="apple-touch-icon" href="/assets/icon-256.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -395,7 +302,7 @@ export const LANDING_HTML = `<!doctype html>
     <a class="hide" href="#faq">FAQ</a>
     <a class="hide" href="/pitch/">Pitch deck</a>
     <a class="hide" href="https://github.com/edycutjong/lunker">GitHub</a>
-    <a class="live" href="${API_ORIGIN}/verify"><span class="dot"></span>Live ledger</a>
+    <a class="live" href="https://lunker.edycu.workers.dev/verify"><span class="dot"></span>Live ledger</a>
   </nav>
 
   <header class="hero">
@@ -408,8 +315,8 @@ export const LANDING_HTML = `<!doctype html>
       <div class="ctas">
         <a class="btn gh" href="https://github.com/edycutjong/lunker"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>View on GitHub</a>
         <a class="btn" href="/pitch/">Pitch deck</a>
-        <a class="btn" href="${API_ORIGIN}/verify"><span class="dot"></span>Live ledger</a>
-        <a class="btn primary" href="⟦FILL:PLAY_URL⟧">Get it on Google Play</a>
+        <a class="btn" href="https://lunker.edycu.workers.dev/verify"><span class="dot"></span>Live ledger</a>
+        <span class="btn primary pending" aria-disabled="true">Get it on Google Play</span>
       </div>
       <div class="run"><code>ttl: 60</code><span>the push expires on its own</span><span>· 269 tests</span></div>
     </div>
@@ -440,7 +347,7 @@ export const LANDING_HTML = `<!doctype html>
       <div><div class="v" id="pct">—</div><div class="k">of bite pushes answered within 60s</div><div class="src" id="pct-src">Loading from /verify…</div></div>
       <div><div class="v" id="p50">—</div><div class="k">median open latency</div><div class="src" id="p50-src">Measured from send, not from open</div></div>
       <div class="state"><span id="ledger-state">Reading the live ledger…</span>
-        <span>These two are read live from <a href="${API_ORIGIN}/verify">/verify</a> on every visit, so there is nothing here to type in by hand. OneSignal's first real bite goes out after the 2026-09-26 fix.</span></div>
+        <span>These two are read live from <a href="https://lunker.edycu.workers.dev/verify">/verify</a> on every visit, so there is nothing here to type in by hand. OneSignal's first real bite goes out after the 2026-09-26 fix.</span></div>
     </div>
   </section>
 </div>
@@ -461,7 +368,7 @@ export const LANDING_HTML = `<!doctype html>
         <div class="bar"><span>OneSignalClient.sendBite()</span><span>POST /notifications</span></div>
 <pre id="replay"><span class="k">"name"</span>: <span class="s">"bite:willow"</span>,
 <span class="k">"include_aliases"</span>: { <span class="k">"external_id"</span>: [<span class="s">"…"</span>] },
-<span class="k">"contents"</span>: { <span class="k">"en"</span>: <span class="s">"Your rod is twitching at Willow Lake\\n60s before it escapes."</span> },
+<span class="k">"contents"</span>: { <span class="k">"en"</span>: <span class="s">"Your rod is twitching at Willow Lake\n60s before it escapes."</span> },
 <span class="k">"app_url"</span>: <span class="s">"lunker://bite/willow?nid=…"</span>,
 <span class="k">"collapse_id"</span>: <span class="s">"bite:…"</span>,
 <span class="k">"ttl"</span>: <span class="hot">60</span></pre>
@@ -481,7 +388,7 @@ export const LANDING_HTML = `<!doctype html>
         <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#3FDBB6" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
         <h3>Bite times, as the dispatcher enforces them</h3>
         <p>Every 15 minutes the cron asks who is due. A lake only bites in its own hours, <b>never while you are asleep</b>, and never twice within the hour.</p>
-        ${BITE_TIMES}
+        <div class="bt" role="group" aria-label="Hours in which each lake may bite, local time"><div class="bt-row bt-head" aria-hidden="true"><div></div><div class="bt-cells"><span class="hr">00</span><span class="hr"></span><span class="hr"></span><span class="hr"></span><span class="hr"></span><span class="hr"></span><span class="hr">06</span><span class="hr"></span><span class="hr"></span><span class="hr"></span><span class="hr"></span><span class="hr"></span><span class="hr">12</span><span class="hr"></span><span class="hr"></span><span class="hr"></span><span class="hr"></span><span class="hr"></span><span class="hr">18</span><span class="hr"></span><span class="hr"></span><span class="hr"></span><span class="hr"></span><span class="hr">23</span></div></div><div class="bt-row"><div class="bt-lake"><b>Willow Lake</b><small>free · 08–19 · 3–5 a day · <span class="r-rare">up to rare</span></small></div><div class="bt-cells" aria-hidden="true"><i class="zz" title="Willow Lake 00:00"></i><i class="zz" title="Willow Lake 01:00"></i><i class="zz" title="Willow Lake 02:00"></i><i class="zz" title="Willow Lake 03:00"></i><i class="zz" title="Willow Lake 04:00"></i><i class="zz" title="Willow Lake 05:00"></i><i class="zz" title="Willow Lake 06:00"></i><i class="zz" title="Willow Lake 07:00"></i><i class="on" title="Willow Lake 08:00"></i><i class="on" title="Willow Lake 09:00"></i><i class="on" title="Willow Lake 10:00"></i><i class="on" title="Willow Lake 11:00"></i><i class="on" title="Willow Lake 12:00"></i><i class="on" title="Willow Lake 13:00"></i><i class="on" title="Willow Lake 14:00"></i><i class="on" title="Willow Lake 15:00"></i><i class="on" title="Willow Lake 16:00"></i><i class="on" title="Willow Lake 17:00"></i><i class="on" title="Willow Lake 18:00"></i><i class="off" title="Willow Lake 19:00"></i><i class="off" title="Willow Lake 20:00"></i><i class="off" title="Willow Lake 21:00"></i><i class="off" title="Willow Lake 22:00"></i><i class="zz" title="Willow Lake 23:00"></i></div></div><div class="bt-row"><div class="bt-lake"><b>Reed Shallows</b><small>free · 08–23 · 2–4 a day · <span class="r-uncommon">up to uncommon</span></small></div><div class="bt-cells" aria-hidden="true"><i class="zz" title="Reed Shallows 00:00"></i><i class="zz" title="Reed Shallows 01:00"></i><i class="zz" title="Reed Shallows 02:00"></i><i class="zz" title="Reed Shallows 03:00"></i><i class="zz" title="Reed Shallows 04:00"></i><i class="zz" title="Reed Shallows 05:00"></i><i class="zz" title="Reed Shallows 06:00"></i><i class="zz" title="Reed Shallows 07:00"></i><i class="on" title="Reed Shallows 08:00"></i><i class="on" title="Reed Shallows 09:00"></i><i class="on" title="Reed Shallows 10:00"></i><i class="on" title="Reed Shallows 11:00"></i><i class="on" title="Reed Shallows 12:00"></i><i class="on" title="Reed Shallows 13:00"></i><i class="on" title="Reed Shallows 14:00"></i><i class="on" title="Reed Shallows 15:00"></i><i class="on" title="Reed Shallows 16:00"></i><i class="on" title="Reed Shallows 17:00"></i><i class="on" title="Reed Shallows 18:00"></i><i class="on" title="Reed Shallows 19:00"></i><i class="on" title="Reed Shallows 20:00"></i><i class="on" title="Reed Shallows 21:00"></i><i class="on" title="Reed Shallows 22:00"></i><i class="zz" title="Reed Shallows 23:00"></i></div></div><div class="bt-row"><div class="bt-lake"><b>Quarry Pool</b><small>1,200 COIN · 08–23 · 2–3 a day · <span class="r-rare">up to rare</span></small></div><div class="bt-cells" aria-hidden="true"><i class="zz" title="Quarry Pool 00:00"></i><i class="zz" title="Quarry Pool 01:00"></i><i class="zz" title="Quarry Pool 02:00"></i><i class="zz" title="Quarry Pool 03:00"></i><i class="zz" title="Quarry Pool 04:00"></i><i class="zz" title="Quarry Pool 05:00"></i><i class="zz" title="Quarry Pool 06:00"></i><i class="zz" title="Quarry Pool 07:00"></i><i class="on" title="Quarry Pool 08:00"></i><i class="on" title="Quarry Pool 09:00"></i><i class="on" title="Quarry Pool 10:00"></i><i class="on" title="Quarry Pool 11:00"></i><i class="on" title="Quarry Pool 12:00"></i><i class="on" title="Quarry Pool 13:00"></i><i class="on" title="Quarry Pool 14:00"></i><i class="on" title="Quarry Pool 15:00"></i><i class="on" title="Quarry Pool 16:00"></i><i class="on" title="Quarry Pool 17:00"></i><i class="on" title="Quarry Pool 18:00"></i><i class="on" title="Quarry Pool 19:00"></i><i class="on" title="Quarry Pool 20:00"></i><i class="on" title="Quarry Pool 21:00"></i><i class="on" title="Quarry Pool 22:00"></i><i class="zz" title="Quarry Pool 23:00"></i></div></div><div class="bt-row"><div class="bt-lake"><b>Deep Sea</b><small>Angler’s Pass · 18–23 · 1–2 a day · <span class="r-legendary">up to legendary</span></small></div><div class="bt-cells" aria-hidden="true"><i class="zz" title="Deep Sea 00:00"></i><i class="zz" title="Deep Sea 01:00"></i><i class="zz" title="Deep Sea 02:00"></i><i class="zz" title="Deep Sea 03:00"></i><i class="zz" title="Deep Sea 04:00"></i><i class="zz" title="Deep Sea 05:00"></i><i class="zz" title="Deep Sea 06:00"></i><i class="zz" title="Deep Sea 07:00"></i><i class="off" title="Deep Sea 08:00"></i><i class="off" title="Deep Sea 09:00"></i><i class="off" title="Deep Sea 10:00"></i><i class="off" title="Deep Sea 11:00"></i><i class="off" title="Deep Sea 12:00"></i><i class="off" title="Deep Sea 13:00"></i><i class="off" title="Deep Sea 14:00"></i><i class="off" title="Deep Sea 15:00"></i><i class="off" title="Deep Sea 16:00"></i><i class="off" title="Deep Sea 17:00"></i><i class="on" title="Deep Sea 18:00"></i><i class="on" title="Deep Sea 19:00"></i><i class="on" title="Deep Sea 20:00"></i><i class="on" title="Deep Sea 21:00"></i><i class="on" title="Deep Sea 22:00"></i><i class="zz" title="Deep Sea 23:00"></i></div></div></div><p class="bt-legend"><span><i class="on"></i>may bite</span><span><i class="zz"></i>asleep — no lake bites</span><span>never two bites within 1 hour</span><span class="src">rendered from isWithinCadence() · worker/src/lib/bite.ts</span></p>
       </div>
       <div class="cell c-timer">
         <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#FFA05A" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 3v4M21 12h-4"/></svg></div>
@@ -532,7 +439,7 @@ export const LANDING_HTML = `<!doctype html>
     <h2>What a judge would ask.</h2>
     <div class="faq">
       <details><summary>Has a real bite been sent yet?</summary><p>No — <b>OneSignal has sent 0 notifications.</b> Until 2026-09-26 the Worker called <code>fetch</code> with the wrong <code>this</code>, and the Workers runtime threw <code>Illegal invocation</code> on every request. It is fixed, and <code>tests/fetch-binding.test.js</code> fails on the old code.</p></details>
-      <details><summary>Why is the answer-rate number empty?</summary><p>Because the live ledger has no rows yet. The number is read from <a href="${API_ORIGIN}/verify">/verify</a> on every visit and is never typed in; an empty ledger renders as “no data yet”, not as a guess.</p></details>
+      <details><summary>Why is the answer-rate number empty?</summary><p>Because the live ledger has no rows yet. The number is read from <a href="https://lunker.edycu.workers.dev/verify">/verify</a> on every visit and is never typed in; an empty ledger renders as “no data yet”, not as a guess.</p></details>
       <details><summary>Is COIN real?</summary><p>The server path is built and tested: grants, spends, the atomic debit and the <code>settled: false</code> refusal. The COIN currency has <b>not yet been created in RevenueCat</b>, so no grant has settled. When it is, the balance you see is RevenueCat’s word, not the phone’s.</p></details>
       <details><summary>Can a modified APK claim a Legendary?</summary><p>No. The client never sends a fish. The server rolls against the lake’s committed table with a seed derived from <code>HMAC-SHA256(notification_id, ROLL_SERVER_SECRET)</code>, written before the push leaves.</p></details>
       <details><summary>What happens if I ignore the push?</summary><p>The fish escapes and your streak survives. The bite still counts: its telemetry row is written at send time, so an unanswered bite stays in the denominator of the number we lead with.</p></details>
@@ -546,10 +453,10 @@ export const LANDING_HTML = `<!doctype html>
     <span class="sp"><img src="/assets/icon-256.png" alt="" width="26" height="26">Built solo for RevenueCat Shipaton 2026.</span>
     <a href="https://github.com/edycutjong/lunker">GitHub</a>
     <a href="/pitch/">Pitch deck</a>
-    <a href="${API_ORIGIN}/verify">Live ledger</a>
+    <a href="https://lunker.edycu.workers.dev/verify">Live ledger</a>
     <a href="/privacy.html">Privacy</a>
-    <a href="⟦FILL:VIDEO_URL⟧">Demo video</a>
-    <a href="⟦FILL:DEVPOST_URL⟧">Devpost</a>
+    <span class="pending" aria-disabled="true">Demo video</span>
+    <span class="pending" aria-disabled="true">Devpost</span>
     <a href="https://github.com/edycutjong/lunker/blob/main/LICENSE">MIT License</a>
   </footer>
 </div>
@@ -608,7 +515,7 @@ export const LANDING_HTML = `<!doctype html>
 
   // Numbers come from the same computation the CLI runs. Nothing here is typed
   // in by hand, so the page cannot drift from the ledger it summarises.
-  fetch('${API_ORIGIN}/verify?format=json')
+  fetch('https://lunker.edycu.workers.dev/verify?format=json')
     .then(function (r) { return r.json(); })
     .then(function (d) {
       var b = d.bench;
@@ -641,41 +548,4 @@ export const LANDING_HTML = `<!doctype html>
       document.getElementById('ledger-state').textContent = 'The live ledger did not answer.';
     });
 </script>
-</body></html>`;
-
-/**
- * Matches an anchor whose href is still an unfilled placeholder token.
- *
- * The delimiters are assembled from code points rather than written literally,
- * so this line does not itself register as an unfilled token when
- * `scripts/check-submission-readiness.mjs` walks the tree. A gate that counts
- * its own machinery is a gate that always reads one short of the truth.
- */
-const FILL_OPEN = `${String.fromCharCode(0x27e6)}FILL:`;
-const FILL_CLOSE = String.fromCharCode(0x27e7);
-const PENDING_LINK = new RegExp(
-  `<a([^>]*?)href="${FILL_OPEN}[A-Z_]+${FILL_CLOSE}"([^>]*)>([\\s\\S]*?)</a>`,
-  'g',
-);
-
-/**
- * Serve-time degradation for destinations that do not exist yet.
- *
- * The page went public the moment the Worker was deployed, which is weeks
- * before the store listings, the video and the repo exist. Left alone, the
- * template's placeholder tokens render as a literal unfilled href,
- * so every CTA on the page is a dead link to anyone who opens it — including
- * anyone we hand the URL to early.
- *
- * This turns each of those into a visibly inert element instead. It is
- * deliberately a RENDER-time transform, not an edit to the template: the raw
- * tokens stay in the source so `check-submission-readiness.mjs` keeps failing
- * until they are genuinely resolved. A page that hides its own unfinished
- * state from the gate would be the worse bug.
- */
-export function renderLanding(html: string = LANDING_HTML): string {
-  return html.replace(PENDING_LINK, (_match, pre: string, post: string, label: string) => {
-    const cls = /class="([^"]*)"/.exec(pre + post)?.[1] ?? '';
-    return `<span class="${`${cls} pending`.trim()}" aria-disabled="true">${label}</span>`;
-  });
-}
+</body></html>

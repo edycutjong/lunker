@@ -1,21 +1,4 @@
-/**
- * The privacy policy. `scripts/build-site.mjs` publishes it as site/privacy.html
- * (https://lunker.edycu.dev/privacy.html); the Worker redirects /privacy there.
- *
- * Google Play blocks a closed-testing rollout without a reachable policy URL,
- * and this app genuinely does collect data: a push token through OneSignal and
- * purchase events through RevenueCat.
- *
- * It is written from the schema rather than from a template. Every item listed
- * below corresponds to a real column in `worker/migrations/`, and the "what we
- * do not collect" list is checkable by reading the same file. A policy that
- * claims less than the code does is a lie; one that claims more is lazy, and
- * Play's Data Safety form will contradict it.
- */
-
-const UPDATED = '2026-09-06';
-
-export const PRIVACY_HTML = `<!doctype html>
+<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Lunker — Privacy Policy</title>
@@ -37,7 +20,7 @@ export const PRIVACY_HTML = `<!doctype html>
 </style></head><body><main>
 
 <h1>Lunker — Privacy Policy</h1>
-<p class="sub">Last updated ${UPDATED}</p>
+<p class="sub">Last updated 2026-09-06</p>
 
 <p>Lunker is a fishing game. It sends you a notification when a fish bites, and it keeps a small
 amount of data so that the game can work and so that purchases are honoured. There is no advertising
@@ -104,4 +87,4 @@ describes what the shipped code actually does; the data collected is listed tabl
 open-source schema at
 <a href="https://github.com/edycutjong/lunker" rel="noopener">github.com/edycutjong/lunker</a>.</p>
 
-</main></body></html>`;
+</main></body></html>

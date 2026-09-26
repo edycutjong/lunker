@@ -1,57 +1,68 @@
 /**
- * The landing page and pitch deck as served by the Worker.
+ * The landing page and pitch deck, published by GitHub Pages from site/ at
+ * https://lunker.edycu.dev, while the live ledger and API stay on the Worker.
  *
  * Both are judge-facing, and both used to be places where a claim could drift
  * from the code: a schedule drawn by hand, an image path that 404s once
- * deployed, a static file that silently shadows /verify. Each test here pins
- * one of those so the surface cannot say something the Worker does not do.
+ * deployed, committed HTML that no longer matches its source, an old Worker URL
+ * (already pasted into Play) that stops resolving. Each test pins one of those.
  */
 
 import { describe, it, expect } from 'vitest';
-import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
-import { join, relative, resolve, dirname } from 'node:path';
+import { readFileSync, existsSync } from 'node:fs';
+import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LAKES } from '../shared/content.js';
 import { isWithinCadence } from '../worker/src/lib/bite.js';
-import { renderLanding, renderBiteTimes, ORIGIN } from '../worker/src/landing.js';
+import { renderLanding, renderBiteTimes, ORIGIN, API_ORIGIN } from '../worker/src/landing.js';
+import { PRIVACY_HTML } from '../worker/src/routes/privacy.js';
+import worker, { sitePath } from '../worker/src/index.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const PUBLIC = join(ROOT, 'worker/public');
-const DECK = join(PUBLIC, 'pitch/index.html');
+const SITE = join(ROOT, 'site');
+const DECK = join(SITE, 'pitch/index.html');
 
-function walk(dir) {
-  return readdirSync(dir).flatMap((f) => {
-    const p = join(dir, f);
-    return statSync(p).isDirectory() ? walk(p) : [p];
+describe('the committed site/ is exactly what the source renders', () => {
+  // GitHub Pages serves the committed files, not the TypeScript. If someone edits
+  // landing.ts and forgets `node scripts/build-site.mjs`, this is what fails.
+  it('site/index.html matches renderLanding()', () => {
+    expect(readFileSync(join(SITE, 'index.html'), 'utf8')).toBe(renderLanding());
   });
-}
+  it('site/privacy.html matches PRIVACY_HTML', () => {
+    expect(readFileSync(join(SITE, 'privacy.html'), 'utf8')).toBe(PRIVACY_HTML);
+  });
+});
 
-describe('static assets never shadow a Worker route', () => {
-  // Workers static assets are matched BEFORE the Worker runs. One stray
-  // public/verify.html or public/index.html would replace the live ledger or
-  // the landing page with a frozen file, and every test of the route would
-  // still pass, because they call the handler directly.
-  const ROUTES = [
-    '/',
-    '/index.html',
-    '/verify',
-    '/privacy',
-    '/health',
-    '/catch-resolved',
-    '/spend-coin',
-    '/bite-opened',
-    '/webhooks/revenuecat',
-    '/player/sync',
-    '/dev/cast',
-  ];
+describe('old Worker page URLs redirect to the static site', () => {
+  // The privacy URL may already be pasted into Play Console as
+  // https://lunker.edycu.workers.dev/privacy — it must keep resolving.
+  it.each([
+    ['/', '/'],
+    ['/index.html', '/'],
+    ['/privacy', '/privacy.html'],
+    ['/pitch', '/pitch/'],
+    ['/pitch/index.html', '/pitch/index.html'],
+    ['/assets/og-image.jpg', '/assets/og-image.jpg'],
+  ])('%s -> %s', (from, to) => {
+    expect(sitePath(from)).toBe(to);
+  });
 
-  it('has no public file whose served path is a route', () => {
-    const served = walk(PUBLIC).map((f) => '/' + relative(PUBLIC, f).split('\\').join('/'));
-    const shadows = served.filter((p) => {
-      const bare = p.replace(/\.html$/, '').replace(/\/index$/, '') || '/';
-      return ROUTES.some((r) => r === p || r === bare || p.startsWith(r + '/'));
-    });
-    expect(shadows).toEqual([]);
+  it('never redirects a live route', () => {
+    for (const r of [
+      '/verify',
+      '/health',
+      '/catch-resolved',
+      '/spend-coin',
+      '/webhooks/revenuecat',
+    ]) {
+      expect(sitePath(r), r).toBeNull();
+    }
+  });
+
+  it('answers GET /privacy with a 301 to the Pages URL', async () => {
+    const res = await worker.fetch(new Request('https://lunker.edycu.workers.dev/privacy'), {});
+    expect(res.status).toBe(301);
+    expect(res.headers.get('location')).toBe(`${ORIGIN}/privacy.html`);
   });
 });
 
@@ -87,23 +98,26 @@ describe('every asset the surfaces reference exists', () => {
     ].map((m) => m[1]);
     expect(landing.length).toBeGreaterThan(0);
     expect(deck.length).toBeGreaterThan(0);
-    const missing = [...landing, ...deck].filter((f) => !existsSync(join(PUBLIC, 'assets', f)));
+    const missing = [...landing, ...deck].filter((f) => !existsSync(join(SITE, 'assets', f)));
     expect(missing).toEqual([]);
   });
 
   it('points og:image at an absolute URL of a file that ships', () => {
     const m = /<meta property="og:image" content="([^"]+)">/.exec(renderLanding());
     expect(m?.[1]).toBe(`${ORIGIN}/assets/og-image.jpg`);
-    expect(existsSync(join(PUBLIC, 'assets/og-image.jpg'))).toBe(true);
+    expect(existsSync(join(SITE, 'assets/og-image.jpg'))).toBe(true);
   });
 });
 
 describe('the landing page links what a judge and Play both need', () => {
   it('links the privacy policy and the live ledger', () => {
     const out = renderLanding();
-    expect(out).toContain('href="/privacy"');
-    expect(out).toContain('href="/verify"');
+    expect(out).toContain('href="/privacy.html"');
+    expect(out).toContain(`href="${API_ORIGIN}/verify"`);
     expect(out).toContain('href="/pitch/"');
+    // Pages has no /verify: a relative ledger link or fetch would 404 there.
+    expect(out).not.toContain('href="/verify"');
+    expect(out).toContain(`fetch('${API_ORIGIN}/verify?format=json')`);
   });
 
   it('never links the store listing or the video while they are placeholders', () => {

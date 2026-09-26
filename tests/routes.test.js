@@ -915,7 +915,7 @@ describe('defect: the live landing page served dead placeholder links', () => {
   it('leaves real links untouched', async () => {
     const { renderLanding } = await import('../worker/src/landing.js');
     const out = renderLanding();
-    expect(out).toContain('href="/verify"');
+    expect(out).toContain('href="https://lunker.edycu.workers.dev/verify"');
     expect(out).toContain('href="#how"');
   });
 });
