@@ -54,7 +54,17 @@ export default {
       }
 
       if (req.method === 'GET') {
-        if (path === '/verify') return await verify(req, deps);
+        if (path === '/verify') {
+          // Browsers get the page on the site's domain, which fetches this
+          // route's JSON and renders it with the same function. The JSON (and
+          // ?format=html, the Worker's own render) stay here for scripts,
+          // curl, and anyone who wants the source without the site in between.
+          const fmt = url.searchParams.get('format');
+          if (fmt !== 'json' && fmt !== 'html') {
+            return Response.redirect(`${SITE_ORIGIN}/verify/${url.search}`, 301);
+          }
+          return await verify(req, deps);
+        }
         if (path === '/health') return json({ ok: true });
         // The landing, privacy policy, deck and images moved to GitHub Pages
         // (https://lunker.edycu.dev). Old links — including a privacy URL

@@ -31,7 +31,7 @@ Never-opened (denominator only): <..>
 ```
 
 The same computation, rendered for a judge with nothing installed:
-**https://lunker.edycu.workers.dev/verify** — it imports `computeBench` from
+**https://lunker.edycu.dev/verify/** — it imports `computeBench` from
 [`shared/bench.js`](shared/bench.js), which is the same function this CLI runs.
 The page and this output cannot disagree.
 
@@ -137,7 +137,7 @@ node scripts/lunker-verify.mjs seed:anomalies
 
 ```sh
 npm install
-npm test                                    # 269 tests
+npm test                                    # 274 tests
 npm run seed && git diff --exit-code seed/content            # deterministic
 npm run seed:anomalies && git diff --exit-code seed/         # deterministic
 npm run bench                               # the block above, exactly

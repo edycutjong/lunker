@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lunker — live ledger</title>
+<link rel="canonical" href="https://lunker.edycu.dev/verify/">
+<link rel="icon" type="image/png" href="../assets/favicon-64.png">
+<style>
+  :root{
+    --bg-base:#04171E; --text-hi:#F0FAF6; --text-mid:#94B3AC; --text-low:#47635F;
+    --primary:#3FDBB6; --accent:#FFA05A; --error:#EF4444;
+    --panel:rgba(240,250,246,.04); --line:rgba(240,250,246,.10);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:32px 20px 72px;background:var(--bg-base);color:var(--text-hi);
+    font:400 16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+  main{max-width:760px;margin:0 auto}
+  h1{font-size:22px;letter-spacing:-.01em;margin:0 0 4px}
+  .note{color:var(--text-mid);font-size:14px;margin:0 0 28px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:28px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .stat .v{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:var(--primary)}
+  .stat .k{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--text-mid);margin-top:6px}
+  .stat .src{font-size:11px;color:var(--text-low);margin-top:8px;font-variant-numeric:tabular-nums}
+  table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--text-mid);
+    font-weight:500;padding:0 10px 8px;border-bottom:1px solid var(--line)}
+  td{padding:9px 10px;border-bottom:1px solid var(--line)}
+  .num{text-align:right}
+  td.num:first-child{text-align:left}
+  .pos{color:var(--primary)} .neg{color:var(--accent)} .dim{color:var(--text-low)}
+  .tag{color:var(--error);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.09em;color:var(--text-mid);
+     font-weight:500;margin:32px 0 12px}
+  .caveat{margin-top:28px;padding:14px 16px;border-left:2px solid var(--accent);
+    background:var(--panel);border-radius:0 10px 10px 0;font-size:13px;color:var(--text-mid)}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;color:var(--text-hi)}
+  .empty{color:var(--text-mid);font-size:14px;padding:18px 0}
+  a{color:var(--primary)} a:hover{color:var(--text-hi)} a:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+</style>
+</head><body><main id="ledger" aria-live="polite">
+  <h1>Lunker — live ledger</h1>
+  <p class="note" id="ledger-status">Loading live from the ledger…</p>
+  <noscript><p class="note">This page reads the live ledger with JavaScript. The same data, unrendered:
+    <a href="https://lunker.edycu.workers.dev/verify?format=json">lunker.edycu.workers.dev/verify?format=json</a></p></noscript>
+</main>
+<script src="./verify.js" defer></script>
+</body></html>

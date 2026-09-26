@@ -16,6 +16,7 @@ import { LAKES } from '../shared/content.js';
 import { isWithinCadence } from '../worker/src/lib/bite.js';
 import { renderLanding, renderBiteTimes, ORIGIN, API_ORIGIN } from '../worker/src/landing.js';
 import { PRIVACY_HTML } from '../worker/src/routes/privacy.js';
+import { renderVerify, renderVerifyMain, renderVerifyShell } from '../worker/src/verify-render.js';
 import worker, { sitePath } from '../worker/src/index.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -30,6 +31,60 @@ describe('the committed site/ is exactly what the source renders', () => {
   });
   it('site/privacy.html matches PRIVACY_HTML', () => {
     expect(readFileSync(join(SITE, 'privacy.html'), 'utf8')).toBe(PRIVACY_HTML);
+  });
+  it('site/verify/index.html matches renderVerifyShell()', () => {
+    expect(readFileSync(join(SITE, 'verify/index.html'), 'utf8')).toBe(renderVerifyShell());
+  });
+});
+
+describe('the ledger page on the site renders what the Worker renders', () => {
+  const payload = {
+    bench: {
+      answeredPct: 50,
+      answered: 1,
+      denominator: 2,
+      windowMs: 60000,
+      p50: 1200,
+      p95: 4000,
+      max: 4000,
+      latencyN: 1,
+      clockSkew: 0,
+      neverOpened: 1,
+      fabricated: 0,
+    },
+    testers: 1,
+    purchase_events: 0,
+    ledger_tail: [{ delta: 40, reason: 'catch', rc_status: 200, created_at: 1790000000000 }],
+    refused: 0,
+    note: 'Read-only, anonymized, live from the production ledger.',
+  };
+
+  it('is one function: the Worker page embeds exactly renderVerifyMain()', () => {
+    expect(renderVerify(payload)).toContain(`<main>${renderVerifyMain(payload)}</main>`);
+  });
+
+  it('ships a browser bundle built from that renderer, fetching the live JSON', () => {
+    const js = readFileSync(join(SITE, 'verify/verify.js'), 'utf8');
+    expect(js).toContain('HMAC-verified purchases');
+    expect(js).toContain('https://lunker.edycu.workers.dev');
+    expect(js).toContain('/verify?format=json');
+    expect(renderVerifyShell()).toContain('<script src="./verify.js" defer></script>');
+  });
+
+  it('shows the raw JSON source, and a no-JS fallback to it', () => {
+    expect(renderVerifyMain(payload)).toContain('/verify?format=json');
+    expect(renderVerifyShell()).toMatch(/<noscript>[\s\S]*verify\?format=json/);
+  });
+
+  it('sends a browser at the Worker /verify to the site page, but not the JSON', async () => {
+    const page = await worker.fetch(new Request('https://lunker.edycu.workers.dev/verify'), {});
+    expect(page.status).toBe(301);
+    expect(page.headers.get('location')).toBe(`${ORIGIN}/verify/`);
+    const data = await worker.fetch(
+      new Request('https://lunker.edycu.workers.dev/verify?format=json'),
+      {},
+    );
+    expect(data.status).not.toBe(301);
   });
 });
 
@@ -113,9 +168,9 @@ describe('the landing page links what a judge and Play both need', () => {
   it('links the privacy policy and the live ledger', () => {
     const out = renderLanding();
     expect(out).toContain('href="/privacy.html"');
-    expect(out).toContain(`href="${API_ORIGIN}/verify"`);
+    expect(out).toContain(`href="${ORIGIN}/verify/"`);
     expect(out).toContain('href="/pitch/"');
-    // Pages has no /verify: a relative ledger link or fetch would 404 there.
+    // A bare relative /verify would 404 on Pages; the page lives at /verify/.
     expect(out).not.toContain('href="/verify"');
     expect(out).toContain(`fetch('${API_ORIGIN}/verify?format=json')`);
   });

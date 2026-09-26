@@ -57,7 +57,7 @@ in Lunker, and nothing here is sold or shared with data brokers.</p>
           progress across reinstalls.</td></tr>
   <tr><td>Notification timing — when a bite was sent and when it was opened</td>
       <td>Measuring how often bites are answered within the 60-second window. Shown, anonymised
-          and in aggregate only, on our public <a href="https://lunker.edycu.workers.dev/verify">verification page</a>.</td></tr>
+          and in aggregate only, on our public <a href="https://lunker.edycu.dev/verify/">verification page</a>.</td></tr>
   <tr><td>Purchase records — product, event type, and amount</td>
       <td>Granting what you bought and honouring subscriptions. Held by RevenueCat.</td></tr>
 </table>

@@ -40,3 +40,5 @@ site/privacy.html
 # Hand-maintained deck; its bite-times block is byte-compared to renderBiteTimes()
 # and its QR is one long generated path — a reformat would break both.
 site/pitch/index.html
+site/verify/index.html
+site/verify/verify.js

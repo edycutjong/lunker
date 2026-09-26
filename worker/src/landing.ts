@@ -395,7 +395,7 @@ export const LANDING_HTML = `<!doctype html>
     <a class="hide" href="#faq">FAQ</a>
     <a class="hide" href="/pitch/">Pitch deck</a>
     <a class="hide" href="https://github.com/edycutjong/lunker">GitHub</a>
-    <a class="live" href="${API_ORIGIN}/verify"><span class="dot"></span>Live ledger</a>
+    <a class="live" href="${ORIGIN}/verify/"><span class="dot"></span>Live ledger</a>
   </nav>
 
   <header class="hero">
@@ -408,10 +408,10 @@ export const LANDING_HTML = `<!doctype html>
       <div class="ctas">
         <a class="btn gh" href="https://github.com/edycutjong/lunker"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>View on GitHub</a>
         <a class="btn" href="/pitch/">Pitch deck</a>
-        <a class="btn" href="${API_ORIGIN}/verify"><span class="dot"></span>Live ledger</a>
+        <a class="btn" href="${ORIGIN}/verify/"><span class="dot"></span>Live ledger</a>
         <a class="btn primary" href="⟦FILL:PLAY_URL⟧">Get it on Google Play</a>
       </div>
-      <div class="run"><code>ttl: 60</code><span>the push expires on its own</span><span>· 269 tests</span></div>
+      <div class="run"><code>ttl: 60</code><span>the push expires on its own</span><span>· 274 tests</span></div>
     </div>
 
     <div class="float" role="img" aria-label="The bite notification floating on the lake; its 60-second ring drains to zero while ripples spread from it">
@@ -431,7 +431,7 @@ export const LANDING_HTML = `<!doctype html>
 <div class="wrap">
   <section id="proof" aria-label="Receipts">
     <div class="receipts">
-      <div><div class="v count" id="tests">269</div><div class="k">tests, on Node 22 and 24</div><div class="src">npm test · across 13 files · real SQLite</div></div>
+      <div><div class="v count" id="tests">274</div><div class="k">tests, on Node 22 and 24</div><div class="src">npm test · across 13 files · real SQLite</div></div>
       <div><div class="v"><span class="count" data-to="60">60</span><small>s</small></div><div class="k">then OneSignal drops the push</div><div class="src">ttl: 60 · worker/src/lib/onesignal.ts</div></div>
       <div><div class="v"><span class="count" data-to="6">6</span><small>s</small></div><div class="k">of steady hold lands the fish</div><div class="src">requiredHold: 6 · shared/tension.js</div></div>
       <div><div class="v"><span class="count" data-to="1200">1,200</span></div><div class="k">COIN for Quarry Pool, debited server-side</div><div class="src">cost: 1200 · shared/content.js</div></div>
@@ -440,7 +440,7 @@ export const LANDING_HTML = `<!doctype html>
       <div><div class="v" id="pct">—</div><div class="k">of bite pushes answered within 60s</div><div class="src" id="pct-src">Loading from /verify…</div></div>
       <div><div class="v" id="p50">—</div><div class="k">median open latency</div><div class="src" id="p50-src">Measured from send, not from open</div></div>
       <div class="state"><span id="ledger-state">Reading the live ledger…</span>
-        <span>These two are read live from <a href="${API_ORIGIN}/verify">/verify</a> on every visit, so there is nothing here to type in by hand. OneSignal's first real bite goes out after the 2026-09-26 fix.</span></div>
+        <span>These two are read live from <a href="${ORIGIN}/verify/">/verify</a> on every visit, so there is nothing here to type in by hand. OneSignal's first real bite goes out after the 2026-09-26 fix.</span></div>
     </div>
   </section>
 </div>
@@ -532,7 +532,7 @@ export const LANDING_HTML = `<!doctype html>
     <h2>What a judge would ask.</h2>
     <div class="faq">
       <details><summary>Has a real bite been sent yet?</summary><p>No — <b>OneSignal has sent 0 notifications.</b> Until 2026-09-26 the Worker called <code>fetch</code> with the wrong <code>this</code>, and the Workers runtime threw <code>Illegal invocation</code> on every request. It is fixed, and <code>tests/fetch-binding.test.js</code> fails on the old code.</p></details>
-      <details><summary>Why is the answer-rate number empty?</summary><p>Because the live ledger has no rows yet. The number is read from <a href="${API_ORIGIN}/verify">/verify</a> on every visit and is never typed in; an empty ledger renders as “no data yet”, not as a guess.</p></details>
+      <details><summary>Why is the answer-rate number empty?</summary><p>Because the live ledger has no rows yet. The number is read from <a href="${ORIGIN}/verify/">/verify</a> on every visit and is never typed in; an empty ledger renders as “no data yet”, not as a guess.</p></details>
       <details><summary>Is COIN real?</summary><p>The server path is built and tested: grants, spends, the atomic debit and the <code>settled: false</code> refusal. The COIN currency has <b>not yet been created in RevenueCat</b>, so no grant has settled. When it is, the balance you see is RevenueCat’s word, not the phone’s.</p></details>
       <details><summary>Can a modified APK claim a Legendary?</summary><p>No. The client never sends a fish. The server rolls against the lake’s committed table with a seed derived from <code>HMAC-SHA256(notification_id, ROLL_SERVER_SECRET)</code>, written before the push leaves.</p></details>
       <details><summary>What happens if I ignore the push?</summary><p>The fish escapes and your streak survives. The bite still counts: its telemetry row is written at send time, so an unanswered bite stays in the denominator of the number we lead with.</p></details>
@@ -546,7 +546,7 @@ export const LANDING_HTML = `<!doctype html>
     <span class="sp"><img src="/assets/icon-256.png" alt="" width="26" height="26">Built solo for RevenueCat Shipaton 2026.</span>
     <a href="https://github.com/edycutjong/lunker">GitHub</a>
     <a href="/pitch/">Pitch deck</a>
-    <a href="${API_ORIGIN}/verify">Live ledger</a>
+    <a href="${ORIGIN}/verify/">Live ledger</a>
     <a href="/privacy.html">Privacy</a>
     <a href="⟦FILL:VIDEO_URL⟧">Demo video</a>
     <a href="⟦FILL:DEVPOST_URL⟧">Devpost</a>
