@@ -469,6 +469,21 @@ describe('POST /webhooks/revenuecat', () => {
     expect((await revenuecatWebhook(req, deps)).status).toBe(200);
   });
 
+  it("accepts RevenueCat's own X-RevenueCat-Webhook-Signature (t=,v1=) header", async () => {
+    // The shape the dashboard's HMAC signing actually sends. Before 2026-09-26
+    // this was a 401, so no real purchase could ever reach the ledger.
+    const raw = JSON.stringify(event);
+    const t = Math.floor(NOW / 1000);
+    const v1 = await hmacSha256Hex(`${t}.${raw}`, 'whsec_test');
+    const req = new Request('https://lunker.test/webhooks/revenuecat', {
+      method: 'POST',
+      headers: { 'x-revenuecat-webhook-signature': `t=${t},v1=${v1}` },
+      body: raw,
+    });
+    expect((await revenuecatWebhook(req, deps)).status).toBe(200);
+    expect(deps.db.raw('SELECT * FROM purchase_events')).toHaveLength(1);
+  });
+
   it('200s and ignores an unknown event type so retries are not burned', async () => {
     const res = await revenuecatWebhook(
       await signed({ event: { id: 'evt-9', type: 'SOME_FUTURE_EVENT' } }),

@@ -53,9 +53,14 @@ export async function revenuecatWebhook(req: Request, deps: Deps): Promise<Respo
   // key order, and the mismatch that follows looks exactly like a bad secret.
   const raw = await req.text();
 
-  const signature = req.headers.get('x-revenuecat-signature') ?? req.headers.get('authorization');
+  // RevenueCat's HMAC signing sends X-RevenueCat-Webhook-Signature; the other
+  // two headers carry the legacy bare-hex shape (see lib/webhook.ts).
+  const signature =
+    req.headers.get('x-revenuecat-webhook-signature') ??
+    req.headers.get('x-revenuecat-signature') ??
+    req.headers.get('authorization');
 
-  const ok = await verifySignature(raw, signature, env.REVENUECAT_WEBHOOK_SECRET);
+  const ok = await verifySignature(raw, signature, env.REVENUECAT_WEBHOOK_SECRET, now());
   if (!ok) return json({ error: 'invalid signature' }, 401);
 
   let payload: WebhookBody;

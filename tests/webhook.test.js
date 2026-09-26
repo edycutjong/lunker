@@ -95,4 +95,38 @@ describe('verifySignature', () => {
     const sig = await hmacSha256Hex(BODY, SECRET);
     expect(await verifySignature(BODY, sig.slice(0, 32), SECRET)).toBe(false);
   });
+
+  describe("RevenueCat's documented t=,v1= header", () => {
+    // Found 2026-09-26: the dashboard's HMAC signing sends
+    // `X-RevenueCat-Webhook-Signature: t=<unix>,v1=<hex>` over "<t>.<body>".
+    // Only the bare-hex shape was accepted, so every real delivery was a 401.
+    const T = 1_790_000_000;
+    const NOW = T * 1000;
+    const header = async (t = T, body = BODY) =>
+      `t=${t},v1=${await hmacSha256Hex(`${t}.${body}`, SECRET)}`;
+
+    it('accepts a correct signature inside the window', async () => {
+      expect(await verifySignature(BODY, await header(), SECRET, NOW)).toBe(true);
+    });
+
+    it('rejects a signature over the body alone, without the timestamp', async () => {
+      const bodyOnly = await hmacSha256Hex(BODY, SECRET);
+      expect(await verifySignature(BODY, `t=${T},v1=${bodyOnly}`, SECRET, NOW)).toBe(false);
+    });
+
+    it('rejects a tampered body', async () => {
+      const h = await header();
+      expect(await verifySignature(BODY.replace('evt-1', 'evt-9'), h, SECRET, NOW)).toBe(false);
+    });
+
+    it('rejects a delivery replayed outside the 5-minute window', async () => {
+      expect(await verifySignature(BODY, await header(), SECRET, NOW + 301_000)).toBe(false);
+      expect(await verifySignature(BODY, await header(), SECRET, NOW - 301_000)).toBe(false);
+    });
+
+    it('rejects a header with no timestamp', async () => {
+      const sig = await hmacSha256Hex(`.${BODY}`, SECRET);
+      expect(await verifySignature(BODY, `v1=${sig}`, SECRET, NOW)).toBe(false);
+    });
+  });
 });

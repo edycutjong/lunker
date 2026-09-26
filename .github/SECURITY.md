@@ -62,7 +62,8 @@ and a notification id that was never sent does not exist.
 *"404s a notification id that was never sent"*
 
 **The purchase ledger only accepts signed writes.** The webhook HMAC is verified
-over the raw body bytes before any parse.
+over the raw body bytes before any parse, in RevenueCat's documented
+`X-RevenueCat-Webhook-Signature: t=…,v1=…` form, with a 5-minute replay window.
 → *"401s an unsigned request"*, *"401s a request signed with the wrong secret"*
 
 **The demo trigger is off in production.** `POST /dev/cast` exists so a demo

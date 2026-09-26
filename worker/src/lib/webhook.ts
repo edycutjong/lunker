@@ -42,22 +42,50 @@ export function timingSafeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
+/** Replay window for RevenueCat's timestamped signature, in seconds (their docs suggest 5 min). */
+export const SIGNATURE_TOLERANCE_SEC = 300;
+
 /**
  * Verify a RevenueCat webhook.
  *
- * Accepts the signature bare or prefixed (`sha256=…`), because the dashboard's
- * own examples have shipped both shapes.
+ * Two header shapes are accepted:
+ *
+ * 1. RevenueCat's documented HMAC signing — `X-RevenueCat-Webhook-Signature:
+ *    t=<unix_seconds>,v1=<hex>`, where the HMAC is computed over
+ *    `"<t>.<raw body>"`. This is what the dashboard's "HMAC webhook signing"
+ *    toggle sends, and the timestamp is rejected outside a 5-minute window so a
+ *    captured delivery cannot be replayed later.
+ * 2. A bare or `sha256=`-prefixed hex HMAC over the raw body alone, kept so
+ *    `lunker-verify.mjs webhook:verify` and existing fixtures keep working.
+ *
+ * Found 2026-09-26: only shape 2 was implemented, and RevenueCat never sends
+ * it. Every real delivery would have been refused with a 401, leaving
+ * `purchase_events` — and so the server-side Angler's Pass check — empty.
  */
 export async function verifySignature(
   rawBody: string,
   headerValue: string | null,
   secret: string,
+  nowMs: number = Date.now(),
 ): Promise<boolean> {
   if (!headerValue || !secret) return false;
-  const provided = headerValue
-    .trim()
-    .replace(/^sha256=/i, '')
-    .toLowerCase();
+  const header = headerValue.trim();
+
+  if (/(^|,)\s*v1=/i.test(header)) {
+    const parts = new Map<string, string>();
+    for (const part of header.split(',')) {
+      const idx = part.indexOf('=');
+      if (idx > 0) parts.set(part.slice(0, idx).trim().toLowerCase(), part.slice(idx + 1).trim());
+    }
+    const t = parts.get('t');
+    const v1 = parts.get('v1');
+    if (!t || !v1 || !/^\d+$/.test(t)) return false;
+    if (Math.abs(nowMs / 1000 - Number(t)) > SIGNATURE_TOLERANCE_SEC) return false;
+    const expected = await hmacSha256Hex(`${t}.${rawBody}`, secret);
+    return timingSafeEqual(v1.toLowerCase(), expected);
+  }
+
+  const provided = header.replace(/^sha256=/i, '').toLowerCase();
   const expected = await hmacSha256Hex(rawBody, secret);
   return timingSafeEqual(provided, expected);
 }

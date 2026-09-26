@@ -55,7 +55,7 @@ sequenceDiagram
 
     App->>RC: getOfferings() / purchasePackage()
     RC->>API: purchase auto-credits the associated VC
-    API->>Cron: POST /webhooks/revenuecat (HMAC over raw body)
+    API->>Cron: POST /webhooks/revenuecat (HMAC over t + raw body)
 
     App->>RC: presentPaywallIfNeeded(anglers_pass)  %% Deep Sea
     App->>Cron: POST /spend-coin  %% Quarry, 422 when short
@@ -72,7 +72,7 @@ Seven that carry behaviour, plus four trivial GETs (`/`, `/index.html`,
 | `POST /catch-resolved` | Client posts that it won. Server rolls the fish from `sent.roll_seed`, grants COIN, returns the catch. Idempotent on `catch:<nid>`. | [`catch-resolved.ts`](worker/src/routes/catch-resolved.ts) |
 | `POST /spend-coin` | Atomic COIN debit for a coin-gated lake. 422 is a first-class answer, surfaced as "1,200 COIN — you have 840". | [`spend-coin.ts`](worker/src/routes/spend-coin.ts) |
 | `POST /bite-opened` | Telemetry. **404s any `notification_id` not in the `sent` log** — the validity gate under the killer number. | [`bite-opened.ts`](worker/src/routes/bite-opened.ts) |
-| `POST /webhooks/revenuecat` | HMAC-SHA256 over raw body. Appends to `purchase_events`. Idempotent on `event_id`. | [`revenuecat-webhook.ts`](worker/src/routes/revenuecat-webhook.ts) |
+| `POST /webhooks/revenuecat` | HMAC-SHA256 over `"<t>.<raw body>"` (RevenueCat's `X-RevenueCat-Webhook-Signature`, 5-min window). Appends to `purchase_events`. Idempotent on `event_id`. | [`revenuecat-webhook.ts`](worker/src/routes/revenuecat-webhook.ts) |
 | `POST /player/sync` | Targeting state: current lake, unlocked lakes, real push permission, tz offset. | [`player-sync.ts`](worker/src/routes/player-sync.ts) |
 | `GET /verify` | Read-only, anonymized, aggregate. Runs `computeBench` from `shared/`. | [`verify.ts`](worker/src/routes/verify.ts) |
 | `POST /dev/cast` | Recording only. Triggers the bite *timing*; the *roll* stays live. | [`dev-cast.ts`](worker/src/routes/dev-cast.ts) |
