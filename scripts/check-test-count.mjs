@@ -26,6 +26,7 @@ const SURFACES = [
   '.github/PULL_REQUEST_TEMPLATE.md',
   '.github/workflows/ci.yml',
   'worker/src/landing.ts',
+  'worker/public/pitch/index.html',
 ];
 
 // Ask vitest, rather than trusting anything written down.
