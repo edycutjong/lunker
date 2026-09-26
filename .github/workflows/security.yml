@@ -79,10 +79,10 @@ jobs:
         run: npm audit --audit-level=high
 
       # The app gates at `critical` rather than `high`, and this is a deliberate,
-      # named exception rather than a loosened knob. Every current `high` in the
-      # app tree is metro / postcss / image-size reached through `react-native`,
+      # named exception rather than a loosened knob. The one current `high` in the
+      # app tree (2026-09-26) is image-size, reached through `react-native` → metro,
       # i.e. the Expo bundler that runs on a developer machine at build time and
-      # is not present in the shipped APK. They are pinned by `expo ~53`, so the
+      # is not present in the shipped APK. It is pinned by `expo ~53`, so the
       # only "fix" is an SDK major — a framework migration, not maintenance, and
       # not something to run unattended against a frozen submission. They are
       # printed in full below so the exception is visible rather than silent.

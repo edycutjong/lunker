@@ -98,9 +98,12 @@ with it — a key deleted in a later commit is still a key that ships.
 
 ### Known accepted risk
 
-`npm audit` reports `high` findings in the app tree for `metro`, `postcss` and
-`image-size`. All are reached through `react-native` and all are part of the
-Expo bundler that runs on a developer machine at build time; none is present in
-the shipped APK. They are pinned by `expo ~53` and the only remedy is an SDK
-major upgrade. The app job therefore gates at `critical` (currently zero) and
+`npm audit` reports one `high` finding in the app tree, as of 2026-09-26:
+`image-size` (a denial of service in its JXL/HEIF/ICNS parsers), reached
+through `react-native` → `metro`. It is part of the Expo bundler that runs on a
+developer machine at build time and is not present in the shipped APK. The
+patched release is `image-size` 2.x, a major outside the range `metro` 0.82
+declares, and `metro` is pinned by `expo ~53` — so the remedy is an SDK major
+upgrade, not a lockfile bump. (`postcss`, previously listed here, is now pinned
+to a fixed release by an `overrides` entry.) The app job therefore gates at `critical` (currently zero) and
 prints the full `high` report to the run summary rather than hiding it.
