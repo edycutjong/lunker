@@ -1,17 +1,20 @@
-# FEEDBACK — DX friction, sent to the sponsors
+# FEEDBACK — DX friction for the sponsors
 
-Kept at repo root and linked from the README's first screen. Written while the
-friction was fresh rather than reconstructed at the end, because reconstructed
-feedback is always vaguer and always kinder than the real thing.
+Kept at repo root and linked from the README. Written while the friction was
+fresh rather than reconstructed at the end, because reconstructed feedback is
+always vaguer and always kinder than the real thing.
 
-**Send-by date: 2026-09-20.** Prepared-but-unfired feedback has cost us before;
-the fix is a date at creation time, not better intentions.
+**Status (2026-09-26): written, not yet filed** through either sponsor's
+feedback channel. This file is the text we file from; it does not claim to have
+been received by anyone.
 
 **Scope of this document, stated up front:** everything below comes from
 *integrating the SDKs in code* — reading the docs, pinning versions, and getting
-the client and server paths working. The OneSignal app, its Journeys, and the
+the client and server paths working, with tests against stubbed responses.
+No push has yet been delivered to a player, the COIN currency has not yet been
+exercised against a live RevenueCat project, and OneSignal Journeys and the
 RevenueCat→OneSignal integration are dashboard configuration that is **not yet
-enabled**, so nothing here reports operational experience with them. Where a
+enabled** — so nothing here reports operational experience with them. Where a
 point is about the docs rather than a running system, it says so.
 
 ---
@@ -38,8 +41,9 @@ would have saved the day.
 
 ### 2. The 422 on insufficient balance is the best part, and it is buried
 
-The atomic `adjustments` map returning 422 with *nothing deducted* is genuinely
-excellent — it let us delete an entire read-check-write race from the design.
+The atomic `adjustments` map returning 422 with *nothing deducted* (as
+documented — our tests stub that response) is genuinely excellent: it let us
+delete an entire read-check-write race from the design.
 But it appears as one clause in a paragraph. It deserves its own section with a
 worked example, because it is the thing that makes a server-settled currency
 safe to build on.

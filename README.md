@@ -8,8 +8,6 @@
 
 <img src="docs/assets/readme-hero-animated.svg" width="720" alt="Lunker — a cozy fishing game where the notification is the game">
 
-[![Google Play](https://img.shields.io/badge/📱_Google-Play-06b6d4?style=for-the-badge)](⟦FILL:PLAY_URL⟧)
-[![Demo Video](https://img.shields.io/badge/🎬_2--min-Demo-ef4444?style=for-the-badge)](⟦FILL:VIDEO_URL⟧)
 [![Live Ledger](https://img.shields.io/badge/📡_Live-Ledger-3fdbb6?style=for-the-badge)](https://lunker.edycu.workers.dev/verify)
 [![RevenueCat Shipaton 2026](https://img.shields.io/badge/Devpost-Shipaton_2026-8b5cf6?style=for-the-badge)](https://revenuecat-shipaton-2026.devpost.com/)
 
@@ -64,7 +62,7 @@ The loop, in the order the system executes it:
 |---|---|
 | **A bite arrives** | The Worker's cron dispatcher picks the moment — lake, local hour, one an hour at most, never while you're asleep, capped per lake per day. It writes the roll seed to D1, *then* sends via OneSignal REST. A Journey cannot own this step: the seed must exist before the push leaves. |
 | **You reel it in** | Deep link lands in the minigame. 60-second countdown, one thumb, haptic ticks on every zone crossing. |
-| **The coin is settled** | The server rolls the fish against a committed weight table and credits COIN through RevenueCat's Virtual Currency API. |
+| **The coin is settled** | The server rolls the fish against a committed weight table and asks RevenueCat's Virtual Currency API (REST v2) to credit COIN. If RevenueCat does not confirm the grant, the catch comes back `settled: false` with a 502 — never a balance the phone made up. |
 | **You spend it** | Quarry Pool costs 1,200 COIN (atomic server-side debit). Deep Sea needs the Angler's Pass entitlement (RevenueCat paywall). |
 
 | Layer | Technology |
@@ -108,9 +106,11 @@ is the table `/verify` reads from. Signature checked over the raw body bytes,
 
 ## 📊 Engineering Rigor — the one number
 
-> **⟦FILL:ANSWERED_PCT⟧% of bite pushes were answered within 60 seconds of
-> being sent** — ⟦FILL:BITE_N⟧ bites across ⟦FILL:TESTER_N⟧ testers.
-> p50 ⟦FILL:P50⟧ · p95 ⟦FILL:P95⟧.
+The number this project leads with is **the share of bite pushes answered
+within 60 seconds of being sent**. It is computed live from the production
+ledger and is never typed in by hand, so this README does not quote it: when
+this section was written (2026-09-26) the ledger held no rows, and a figure
+here would be a guess.
 
 Reproduce it yourself against the live ledger:
 
@@ -233,9 +233,7 @@ Documented because the refusals are decisions, not gaps:
 
 - **No second minigame.** One mechanic done properly beats two done adequately.
 - **No iOS build.** Android only — the scope cutline held.
-- **One store: Google Play.** Lunker ships to Play only, so we are not entering
-  Best App for Galaxy — that award scores foldable support and Samsung-specific
-  optimization, and there is no Galaxy Store build.
+- **One store: Google Play.** There is no build for any other store.
 - **No RevenueCat Ads, Web Billing, Experiments, Targeting or Customer Center.**
   All real SDK surfaces, none of them used here, so none of them is claimed.
 - **No offline verification harness.** The judged capability *is* a network

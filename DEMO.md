@@ -6,7 +6,7 @@ that makes an honest submission look dishonest.
 
 | | Claim | Source | Submittable? |
 |---|---|---|---|
-| **A** | "X% of bite pushes answered within 60s" | real player telemetry from the Play build, via the live ledger | **yes — this is the headline** |
+| **A** | "X% of bite pushes answered within 60s" | real bite telemetry in the live production ledger — **none yet:** it held 0 rows on 2026-09-26, so no headline number exists | **yes, once real rows exist** |
 | **B** | the bench arithmetic is correct | the E1–E4 fixture | **never.** Validation only. |
 
 ---
@@ -43,9 +43,9 @@ The page and this output cannot disagree.
   being defined away.
 - **Unanswered bites are in the denominator.** The telemetry row is written at
   send time with a null open. Ignoring a bite counts against us.
-- **Report the real N.** If early launch data is thin, we publish "47 bites
-  across 12 players over 9 days" rather than a rounder number with a bigger N. A small
-  honest N outscores a large synthetic one.
+- **Report the real N.** If early launch data is thin, the number is published
+  with its thin N ("B bites across P players over D days") rather than rounded
+  up or padded with fixture rows. A small honest N outscores a large synthetic one.
 
 ### Honest limitations
 
@@ -53,8 +53,8 @@ The page and this output cannot disagree.
    is *in* the p95, deliberately.
 2. `opened_at` is the client's clock. Rows where it precedes `sent_at` are
    flagged and excluded from latency, and **kept in the denominator**.
-3. Testers know they are testing. This inflates the answer rate versus a cold
-   audience, and we have no way to correct for it — so we say it.
+3. Early players are likely to know the developer. That inflates the answer
+   rate versus a cold audience, and we have no way to correct for it — so we say it.
 
 ---
 
@@ -105,15 +105,15 @@ submission.
 
 ---
 
-## The video, and what was staged
+## The demo video, and what may be staged
 
-The demo video shows a real device, a real push and a real purchase. One thing
-in it is triggered rather than waited for, and the video says so on screen:
+There is no demo video yet (2026-09-26). When one is recorded, one thing in it
+may be triggered rather than waited for, and the video must say so:
 
-- **The bite TIMING is triggered on cue** via `POST /dev/cast` (disabled in
+- **The bite TIMING can be triggered on cue** via `POST /dev/cast` (disabled in
   production). Android push delivery is non-deterministic and a single take
   cannot wait an unknown number of minutes.
-- **The CATCH is a live roll.** The fish is rolled server-side against Willow's
+- **The CATCH is always a live roll.** The fish is rolled server-side against Willow's
   committed table — Moonlight Koi at 3.5%, any Rare at 4.0%. Nothing about the
   outcome is scripted. `P(≥1 Rare in 60 casts) = 91.4%`, which is why one
   recording session is enough without touching the odds.
